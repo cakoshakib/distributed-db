@@ -12,7 +12,8 @@ func add_kv_to_file(user string, table string, key string, value interface{}) er
 		// value is JSON
 	case []interface{}:
 		// value is list
-
+	case int:
+		// value is a number
 	}
 
 	// get UserTable of given request, or create it

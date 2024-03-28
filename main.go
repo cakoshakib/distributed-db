@@ -54,4 +54,5 @@ func main() {
 	_, _ = net.Dial("test", "test")
 
 	storage.AddUser("bob")
+	storage.AddTable("bob", "table1")
 }
