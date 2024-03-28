@@ -53,6 +53,6 @@ func main() {
 
 	_, _ = net.Dial("test", "test")
 
-	storage.AddUser("bob")
-	storage.AddTable("bob", "table1")
+	storage.AddTable("bob", "table2")
+	storage.DeleteUser("bob")
 }
