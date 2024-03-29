@@ -6,7 +6,7 @@ import (
 )
 
 func add_user_to_file(user string) error {
-	user_path := fmt.Sprintf("data/%s", user)
+	user_path := user_path(user)
 	if !file_exists(user_path) {
 		err := os.Mkdir(user_path, 0755)
 		if err != nil {
@@ -17,7 +17,7 @@ func add_user_to_file(user string) error {
 }
 
 func remove_user_from_file(user string) error {
-	user_path := fmt.Sprintf("data/%s", user)
+	user_path := user_path(user)
 	if file_exists(user_path) {
 		if err := os.RemoveAll(user_path); err != nil {
 			return fmt.Errorf("error removing dir %s, may have tables", user_path)

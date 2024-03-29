@@ -54,5 +54,5 @@ func main() {
 	_, _ = net.Dial("test", "test")
 
 	storage.AddTable("bob", "table2")
-	storage.DeleteUser("bob")
+	storage.ReadKV("bob", "table2", "key1")
 }
