@@ -53,6 +53,10 @@ func main() {
 
 	_, _ = net.Dial("test", "test")
 
-	storage.AddTable("bob", "table2")
+	//storage.AddTable("bob", "table2")
 	storage.ReadKV("bob", "table2", "key1")
+	storage.AddKV("bob", "table2", "key2", "test")
+	storage.ReadKV("bob", "table2", "key2")
+	storage.RemoveKV("bob", "table2", "key2")
+	storage.ReadKV("bob", "table2", "key2")
 }

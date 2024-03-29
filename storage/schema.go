@@ -5,5 +5,5 @@ type User struct {
 }
 
 type UserTable struct {
-	data map[string]string
+	data map[string]interface{}
 }
