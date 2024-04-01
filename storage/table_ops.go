@@ -10,11 +10,9 @@ func add_table_to_file(user string, table string) error {
 	table_path := table_path(user, table)
 	// TODO: improve by making error structs
 	if !file_exists(user_path) {
-		// User does not exist
 		return fmt.Errorf("user does not exist %s", user)
 	}
 	if !file_exists(table_path) {
-		// create table
 		if _, err := os.Create(table_path); err != nil {
 			return fmt.Errorf("error creating file %s", table_path)
 		}
@@ -37,6 +35,7 @@ func AddTable(user string, table string) {
 	fmt.Printf("attempting to add table %s to user %s\n", table, user)
 	if err := add_table_to_file(user, table); err != nil {
 		fmt.Printf("err: %v\n", err)
+		return
 	}
 	fmt.Printf("created table %s to user %s\n", table, user)
 }
@@ -45,6 +44,7 @@ func DeleteTable(user string, table string) {
 	fmt.Printf("attempting to remove table %s to user %s\n", table, user)
 	if err := remove_table_from_file(user, table); err != nil {
 		fmt.Printf("err: %v\n", err)
+		return
 	}
 	fmt.Printf("removed table %s to user %s\n", table, user)
 

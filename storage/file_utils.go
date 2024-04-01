@@ -10,6 +10,8 @@ func file_exists(path string) bool {
 	return err == nil
 }
 
+// TODO: remove dependency on relative paths. 
+// perhaps set a configurable data dir path w/ default to */distributeddb/data
 func user_path(user string) string {
 	return fmt.Sprintf("data/%s", user)
 }
