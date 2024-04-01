@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 
-	"net"
-
-	"github.com/cakoshakib/distributed-db/storage"
+	//"github.com/cakoshakib/distributed-db/storage"
+	"github.com/cakoshakib/distributed-db/network"
 )
 
 /*
@@ -49,14 +48,11 @@ userB
 */
 
 func main() {
-	fmt.Println("vim-go")
+	server, err := network.NewServer()
+	if err != nil {
+		fmt.Println("server failed creation")
+		return
+	}
 
-	_, _ = net.Dial("test", "test")
-
-	//storage.AddTable("bob", "table2")
-	storage.ReadKV("bob", "table2", "key1")
-	storage.AddKV("bob", "table2", "key2", "test")
-	storage.ReadKV("bob", "table2", "key2")
-	storage.RemoveKV("bob", "table2", "key2")
-	storage.ReadKV("bob", "table2", "key2")
+	server.Start()
 }
