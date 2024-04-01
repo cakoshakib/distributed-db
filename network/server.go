@@ -1,18 +1,21 @@
 package network
 
 import (
-	"fmt"
+	"context"
 	"errors"
 	"net"
 	"os"
-	"os/signal"
+	
+	"go.uber.org/zap"
+	log "github.com/cakoshakib/distributed-db/commons"
 )
 
 type server struct {
 	listener net.Listener
+	//logger   interface{}
 }
 
-func NewServer() (server, error) {
+func NewServer(ctx context.Context) (server, error) {
 	server := server{}
 
 	listener, err := net.Listen("tcp", ":8080")
@@ -24,40 +27,36 @@ func NewServer() (server, error) {
 	return server, nil
 }
 
-func (s server) Start() {
-	s.handleSignals()
-	fmt.Println("server.start(): starting server")
+func (s server) Start(ctx context.Context) {
+	logger := log.LoggerFromContext(ctx)
+	logger.Info("server.start(): Starting server")
+
+	go func() {
+		<-ctx.Done()
+		logger.Info("Context is cancelled; Stopping server")
+		s.Stop(ctx)
+	}()
 
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
 			if errors.Is(err, net.ErrClosed) {
-				fmt.Printf("server.start(): listener closed.")
-				os.Exit(0)
+				logger.Info("server.start(): listener closed")
+				break
 			}
-
-			fmt.Printf("server.start() error: %s", err)
+			
+			logger.Error("server.start() error", zap.Error(err))
 		}
 
-		go process(conn)
+		go process(ctx, conn)
 	}
 }
 
-func (s server) Stop() {
-	fmt.Println("server.close(): closing server")
+func (s server) Stop(ctx context.Context) {
+	logger := log.LoggerFromContext(ctx)
+	logger.Info("server.close(): closing server")
 	if err := s.listener.Close(); err != nil {
-		fmt.Printf("error closing server: %s", err)
+		logger.Error("server.close(): error closing server", zap.Error(err))
 		os.Exit(1)
 	}
-}
-
-func (s server) handleSignals() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	go func() {
-		<-c
-		s.Stop()
-		os.Exit(0)
-	}()
 }

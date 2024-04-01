@@ -1,10 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"os"
+	"os/signal"
 
+	"go.uber.org/zap"
 	//"github.com/cakoshakib/distributed-db/storage"
 	"github.com/cakoshakib/distributed-db/network"
+	log "github.com/cakoshakib/distributed-db/commons"
 )
 
 /*
@@ -48,11 +52,18 @@ userB
 */
 
 func main() {
-	server, err := network.NewServer()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	logger, _ := zap.NewDevelopment()
+	ctx = context.WithValue(ctx, log.LoggerKey, logger)
+	defer logger.Sync()
+
+	server, err := network.NewServer(ctx)
 	if err != nil {
-		fmt.Println("server failed creation")
+		logger.Error("server: failed initialization with error", zap.Error(err))
 		return
 	}
 
-	server.Start()
+	server.Start(ctx)
 }

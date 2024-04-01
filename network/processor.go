@@ -1,15 +1,19 @@
 package network
 
 import (
-	"fmt"
+	"context"
 	"net"
+
+	"go.uber.org/zap"
+	log "github.com/cakoshakib/distributed-db/commons"
 )
 
-func process(conn net.Conn) {
-	fmt.Printf("server.process(): received connection from %s", conn.RemoteAddr())
+func process(ctx context.Context, conn net.Conn) {
+	logger := log.LoggerFromContext(ctx)
+	logger.Info("server.process(): received connection", zap.String("remoteAddr", conn.RemoteAddr().String()))
 
 	// TODO
 
-	fmt.Printf("server.process(): closing connection with %s", conn.RemoteAddr())
+	logger.Info("server.process(): closing connection", zap.String("remoteAddr", conn.RemoteAddr().String()))
 	conn.Close()
 }
