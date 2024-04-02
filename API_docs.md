@@ -2,10 +2,10 @@ GET KEY REQUEST
 get [user] [table] [key];
 
 DELETE KEY REQUEST
-delkv [user][table] [key];
+delkv [user] [table] [key];
 
 ADD KEY, VAL REQUEST
-add [user][table] [key] [value];
+add [user] [table] [key] [value];
 
 CREATE TABLE
 ct [user] [table];
