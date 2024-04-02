@@ -1,8 +1,9 @@
 package dbrequest
 
 import (
-	"assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRequest_StringToOperation(t *testing.T) {
@@ -16,7 +17,7 @@ func TestRequest_StringToOperation(t *testing.T) {
 		{
 			name:     "happy case",
 			in:       "get",
-			expected: Get,
+			expected: GetKV,
 		},
 		{
 			name:     "unspecified case",
@@ -27,7 +28,7 @@ func TestRequest_StringToOperation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			out := StringToOperation(tt.in)
-			assert.Equal(out, tt.expected)
+			assert.Equal(t, out, tt.expected)
 		})
 	}
 }
