@@ -1,18 +1,18 @@
 package dbrequest
 
 import (
-	"strings"
 	"regexp"
+	"strings"
 )
 
 type operation string
 
 type DBRequest struct {
-	op    operation
-	user  string
-	table string
-	key   string
-	value string
+	Op    operation
+	User  string
+	Table string
+	Key   string
+	Value string
 }
 
 const (
@@ -59,7 +59,7 @@ func NewRequest(s string) DBRequest {
 	matches := re.FindStringSubmatch(s)
 	if len(matches) > 2 {
 		operation = StringToOperation(matches[1])
-		req.op = operation
+		req.Op = operation
 		paramsBlob := matches[2]
 
 		paramsMatches := regexp.MustCompile(`"[^"\\]*(?:\\.[^"\\]*)*"|\S+`).FindAllString(paramsBlob, -1)
@@ -71,7 +71,7 @@ func NewRequest(s string) DBRequest {
 		}
 	}
 
-	paramFields := []*string{&req.user, &req.table, &req.key, &req.value}
+	paramFields := []*string{&req.User, &req.Table, &req.Key, &req.Value}
 	for i, param := range params {
 		if i < len(paramFields) {
 			*paramFields[i] = param
@@ -82,16 +82,16 @@ func NewRequest(s string) DBRequest {
 }
 
 func (r DBRequest) Validate() bool {
-	switch r.op {
+	switch r.Op {
 	case GetKV, DelKV:
-		return r.user != "" && r.table != "" && r.key != ""
+		return r.User != "" && r.Table != "" && r.Key != ""
 	case AddKV:
 		// r.value != "" is not included as the value could be the null string, ""
-		return r.user != "" && r.table != "" && r.key != ""
+		return r.User != "" && r.Table != "" && r.Key != ""
 	case CreateTable, DeleteTable:
-		return r.user != "" && r.table != ""
+		return r.User != "" && r.Table != ""
 	case CreateUser, DeleteUser:
-		return r.user != ""
+		return r.User != ""
 	default:
 		return false
 	}
