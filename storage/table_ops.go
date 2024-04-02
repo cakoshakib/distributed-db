@@ -31,21 +31,22 @@ func remove_table_from_file(user string, table string) error {
 	return nil
 }
 
-func AddTable(user string, table string) {
+func AddTable(user string, table string) error {
 	fmt.Printf("attempting to add table %s to user %s\n", table, user)
 	if err := add_table_to_file(user, table); err != nil {
 		fmt.Printf("err: %v\n", err)
-		return
+		return err
 	}
 	fmt.Printf("created table %s to user %s\n", table, user)
+	return nil
 }
 
-func DeleteTable(user string, table string) {
+func DeleteTable(user string, table string) error {
 	fmt.Printf("attempting to remove table %s to user %s\n", table, user)
 	if err := remove_table_from_file(user, table); err != nil {
 		fmt.Printf("err: %v\n", err)
-		return
+		return err
 	}
 	fmt.Printf("removed table %s to user %s\n", table, user)
-
+	return nil
 }

@@ -50,32 +50,34 @@ func read_kv_from_file(user string, table string, key string) (interface{}, erro
 	return data[key], nil
 }
 
-func ReadKV(user string, table string, key string) {
+func ReadKV(user string, table string, key string) error {
 	fmt.Println("attempting to read key", key)
 	data, err := read_kv_from_file(user, table, key)
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
-		return
+		return err
 	}
 	fmt.Printf("got data: %v\n", data)
+	return nil
 }
 
-func AddKV(user string, table string, key string, value interface{}) {
+func AddKV(user string, table string, key string, value interface{}) error {
 	fmt.Println("attempting to add key, value", key, value)
 	if err := add_kv_to_file(user, table, key, value); err != nil {
 		fmt.Printf("err: %v\n", err)
-		return
+		return err
 	}
 	fmt.Println("wrote kv pair", key, value)
+	return nil
 }
 
-func RemoveKV(user string, table string, key string) {
+func RemoveKV(user string, table string, key string) error {
 	fmt.Println("attempting to read key", key)
 	err := remove_kv_from_file(user, table, key)
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
-		return
+		return err
 	}
 	fmt.Printf("removed key %s\n", key)
-
+	return nil
 }

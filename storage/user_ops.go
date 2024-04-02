@@ -28,13 +28,14 @@ func remove_user_from_file(user string) error {
 	return nil
 }
 
-func DeleteUser(user string) {
+func DeleteUser(user string) error {
 	fmt.Println("attempting to remove user " + user)
 	if err := remove_user_from_file(user); err != nil {
 		fmt.Printf("err: %v\n", err)
-		return
+		return err
 	}
 	fmt.Println("removed user " + user)
+	return nil
 }
 
 func AddUser(user string) error {
