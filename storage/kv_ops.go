@@ -1,13 +1,14 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 
-	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	log "github.com/cakoshakib/distributed-db/commons"
+	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	"go.uber.org/zap"
 )
 
@@ -51,41 +52,58 @@ func remove_kv_from_file(user string, table string, key string) error {
 
 func read_kv_from_file(user string, table string, key string) (interface{}, error) {
 	data := read_json_data(user, table)
-	return data[key], nil
+	value, exists := data[key]
+	if !exists {
+		return nil, fmt.Errorf("key %s not found", key)
+	}
+	return value, nil
 }
 
-// TODO add returning KV w/ interface lol
-func ReadKV(ctx context.Context, req dbrequest.DBRequest) error {
+func ReadKV(ctx context.Context, req dbrequest.DBRequest) (string, error) {
 	logger := log.LoggerFromContext(ctx)
-	data, err := read_kv_from_file(req.user, req.table, req.key)
+	data, err := read_kv_from_file(req.User, req.Table, req.Key)
 	if err != nil {
 		logger.Error("storage: readkv error", zap.Error(err))
-		return err
+		return "", err
 	}
-	// add data to this log after implementing data -> string operation
-	logger.Info("storage: readkv success", zap.String("key", req.key)) 
-	return nil
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		logger.Error("storage: error marshaling data to json", zap.Error(err))
+		return "", err
+	}
+
+	logger.Info("storage: readkv success", zap.String("key", req.Key), zap.ByteString("value", jsonData))
+	return string(jsonData), nil
 }
 
 func AddKV(ctx context.Context, req dbrequest.DBRequest) error {
 	logger := log.LoggerFromContext(ctx)
-	if err := add_kv_to_file(req.user, req.table, req.key, req.value); err != nil {
-		zap.Error("storage: addkv error", zap.Error(err))
+
+	var value interface{}
+	err := json.Unmarshal([]byte(req.Value), &value)
+	if err != nil {
+		// assume value is not JSON
+		value = req.Value
+	}
+
+	if err := add_kv_to_file(req.User, req.Table, req.Key, value); err != nil {
+		logger.Error("storage: addkv error", zap.Error(err))
 		return err
 	}
 	// same as above
-	zap.Info("storage: addkv success", zap.String("key", req.key))
+	logger.Info("storage: addkv success", zap.String("key", req.Key))
 	return nil
 }
 
 func RemoveKV(ctx context.Context, req dbrequest.DBRequest) error {
 	logger := log.LoggerFromContext(ctx)
-	err := remove_kv_from_file(req.user, req.table, req.key)
+	err := remove_kv_from_file(req.User, req.Table, req.Key)
 	if err != nil {
-		zap.Error("storage: removekv error", zap.Error(err))
+		logger.Error("storage: removekv error", zap.Error(err))
 		fmt.Printf("err: %v\n", err)
 		return err
 	}
-	zap.Info("storage: removekv success", zap.String("key", req.key))
+	logger.Info("storage: removekv success", zap.String("key", req.Key))
 	return nil
 }
