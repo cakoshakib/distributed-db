@@ -3,6 +3,10 @@ package storage
 import (
 	"fmt"
 	"os"
+
+	"github.com/cakoshakib/distributed-db/commons/dbrequest"
+	log "github.com/cakoshakib/distributed-db/commons"
+	"go.uber.org/zap"
 )
 
 func add_table_to_file(user string, table string) error {
@@ -31,22 +35,22 @@ func remove_table_from_file(user string, table string) error {
 	return nil
 }
 
-func AddTable(user string, table string) error {
-	fmt.Printf("attempting to add table %s to user %s\n", table, user)
-	if err := add_table_to_file(user, table); err != nil {
-		fmt.Printf("err: %v\n", err)
+func AddTable(ctx context.Context, req dbrequest.DBRequest) error {
+	logger := log.LoggerFromContext(ctx)
+	if err := add_table_to_file(req.user, req.table); err != nil {
+		logger.Error("storage: add table error", zap.Error(err))
 		return err
 	}
-	fmt.Printf("created table %s to user %s\n", table, user)
+	logger.Info("storage: add table success", zap.String("user", req.user), zap.String("table", req.table))
 	return nil
 }
 
-func DeleteTable(user string, table string) error {
-	fmt.Printf("attempting to remove table %s to user %s\n", table, user)
+func DeleteTable(ctx context.Context, req dbrequest.DBRequest) error {
+	logger := log.LoggerFromContext(ctx)
 	if err := remove_table_from_file(user, table); err != nil {
-		fmt.Printf("err: %v\n", err)
+		logger.Info("storage: delete table error", zap.Error(err))
 		return err
 	}
-	fmt.Printf("removed table %s to user %s\n", table, user)
+	logger.Info("storage: delete table success", zap.String("user", req.user), zap.String("table", req.table))
 	return nil
 }

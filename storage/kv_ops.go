@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	"github.com/cakoshakib/distributed-db/commons/dbrequest"
+	log "github.com/cakoshakib/distributed-db/commons"
+	"go.uber.org/zap"
 )
 
 func read_json_data(user string, table string) map[string]interface{} {
@@ -50,34 +54,38 @@ func read_kv_from_file(user string, table string, key string) (interface{}, erro
 	return data[key], nil
 }
 
-func ReadKV(user string, table string, key string) error {
-	fmt.Println("attempting to read key", key)
-	data, err := read_kv_from_file(user, table, key)
+// TODO add returning KV w/ interface lol
+func ReadKV(ctx context.Context, req dbrequest.DBRequest) error {
+	logger := log.LoggerFromContext(ctx)
+	data, err := read_kv_from_file(req.user, req.table, req.key)
 	if err != nil {
-		fmt.Printf("err: %v\n", err)
+		logger.Error("storage: readkv error", zap.Error(err))
 		return err
 	}
-	fmt.Printf("got data: %v\n", data)
+	// add data to this log after implementing data -> string operation
+	logger.Info("storage: readkv success", zap.String("key", req.key)) 
 	return nil
 }
 
-func AddKV(user string, table string, key string, value interface{}) error {
-	fmt.Println("attempting to add key, value", key, value)
-	if err := add_kv_to_file(user, table, key, value); err != nil {
-		fmt.Printf("err: %v\n", err)
+func AddKV(ctx context.Context, req dbrequest.DBRequest) error {
+	logger := log.LoggerFromContext(ctx)
+	if err := add_kv_to_file(req.user, req.table, req.key, req.value); err != nil {
+		zap.Error("storage: addkv error", zap.Error(err))
 		return err
 	}
-	fmt.Println("wrote kv pair", key, value)
+	// same as above
+	zap.Info("storage: addkv success", zap.String("key", req.key))
 	return nil
 }
 
-func RemoveKV(user string, table string, key string) error {
-	fmt.Println("attempting to read key", key)
-	err := remove_kv_from_file(user, table, key)
+func RemoveKV(ctx context.Context, req dbrequest.DBRequest) error {
+	logger := log.LoggerFromContext(ctx)
+	err := remove_kv_from_file(req.user, req.table, req.key)
 	if err != nil {
+		zap.Error("storage: removekv error", zap.Error(err))
 		fmt.Printf("err: %v\n", err)
 		return err
 	}
-	fmt.Printf("removed key %s\n", key)
+	zap.Info("storage: removekv success", zap.String("key", req.key))
 	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"net"
 
+	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	log "github.com/cakoshakib/distributed-db/commons"
 	"github.com/cakoshakib/distributed-db/storage"
 	"go.uber.org/zap"
@@ -53,8 +54,44 @@ func handleRequest(ctx context.Context, req DBRequest) string {
 
 	switch req.op {
 	case CreateUser:
-		if err := storage.AddUser(req.user); err != nil {
+		if err := storage.AddUser(ctx, req); err != nil {
 			logger.Warn("server.handleRequest(): unable to add user", zap.String("user", req.user), zap.Error(err))
+			return "401 REQUEST FAILED"
+		}
+		return "200 OK"
+	case DeleteUser:
+		if err := storage.DeleteUser(ctx, req); err != nil {
+			logger.Warn("server.handleRequest(): unable to delete user", zap.String("user", req.user), zap.Error(err))
+			return "401 REQUEST FAILED"
+		}
+		return "200 OK"
+	case CreateTable:
+		if err := storage.CreateTable(ctx, req); err != nil {
+			logger.Warn("server.handleRequest(): unable to create table", zap.String("table", req.table), zap.Error(err))
+			return "401 REQUEST FAILED"
+		}
+		return "200 OK"
+	case DeleteTable:
+		if err := storage.DeleteTable(ctx, req); err != nil {
+			logger.Warn("server.handleRequest(): unable to delete table", zap.String("table", req.table), zap.Error(err))
+			return "401 REQUEST FAILED"
+		}
+		return "200 OK"
+	case AddKV:
+		if err := storage.AddKV(ctx, req); err != nil {
+			logger.Warn("server.handleRequest(): unable to create KV", zap.String("key", req.key), zap.String("value", req.value) zap.Error(err))
+			return "401 REQUEST FAILED"
+		}
+		return "200 OK"
+	case GetKV:
+		if err := storage.GetKV(ctx, req); err != nil {
+			logger.Warn("server.handleRequest(): unable to get KV", zap.String("key", req.key), zap.Error(err))
+			return "401 REQUEST FAILED"
+		}
+		return "200 OK"
+	case DelKV:
+		if err := storage.DelKV(ctx, req); err != nil {
+			logger.Warn("server.handleRequest(): unable to delete KV", zap.String("key", req.key), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"

@@ -2,7 +2,7 @@ GET KEY REQUEST
 get [user] [table] [key];
 
 DELETE KEY REQUEST
-del [user][table] [key];
+delkv [user][table] [key];
 
 ADD KEY, VAL REQUEST
 add [user][table] [key] [value];
@@ -10,8 +10,14 @@ add [user][table] [key] [value];
 CREATE TABLE
 ct [user] [table];
 
+DELETE TABLE
+deletetable [user] [table];
+
 CREATE USER
 cu [user];
+
+DELETE USER
+deleteuser [user];
 
 RESPONSES
 200 OK

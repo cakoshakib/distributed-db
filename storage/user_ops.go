@@ -3,6 +3,10 @@ package storage
 import (
 	"fmt"
 	"os"
+
+	"github.com/cakoshakib/distributed-db/commons/dbrequest"
+	log "github.com/cakoshakib/distributed-db/commons"
+	"go.uber.org/zap"
 )
 
 // TODO: initialize data/ folder on server startup if it doesnt exist,
@@ -28,22 +32,22 @@ func remove_user_from_file(user string) error {
 	return nil
 }
 
-func DeleteUser(user string) error {
-	fmt.Println("attempting to remove user " + user)
-	if err := remove_user_from_file(user); err != nil {
-		fmt.Printf("err: %v\n", err)
+func DeleteUser(ctx context.Context, req dbrequest.DBRequest) error {
+	logger := log.LoggerFromContext(ctx)
+	if err := remove_user_from_file(req.user); err != nil {
+		logger.Error("storage: delete user error", zap.Error(err))
 		return err
 	}
-	fmt.Println("removed user " + user)
+	logger.Info("storage: delete user success", zap.String("user", req.user))
 	return nil
 }
 
-func AddUser(user string) error {
-	fmt.Println("attempting to add user " + user)
-	if err := add_user_to_file(user); err != nil {
-		fmt.Printf("err: %v\n", err)
+func AddUser(ctx context.Context, req dbrequest.DBRequest) error {
+	logger := log.LoggerFromContext(ctx)
+	if err := add_user_to_file(req.user); err != nil {
+		logger.Error("storage: add user error", zap.Error(err))
 		return err
 	}
-	fmt.Println("created user " + user)
+	logger.Info("storage: add user success", zap.String("user", req.user))
 	return nil
 }
