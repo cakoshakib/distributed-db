@@ -3,10 +3,11 @@ package network
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"net"
 
-	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	log "github.com/cakoshakib/distributed-db/commons"
+	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	"github.com/cakoshakib/distributed-db/storage"
 	"go.uber.org/zap"
 )
@@ -27,10 +28,10 @@ func process(ctx context.Context, conn net.Conn) {
 		return
 	}
 
-	req := NewRequest(msg)
+	req := dbrequest.NewRequest(msg)
 	logger.Info(
 		"server.process(): received request", zap.String("remoteAddr", remoteAddr),
-		zap.String("operation", string(req.op)), zap.String("user", req.user), zap.String("table", req.table), zap.String("key", req.key), zap.String("value", req.value),
+		zap.String("operation", string(req.Op)), zap.String("user", req.User), zap.String("table", req.Table), zap.String("key", req.Key), zap.String("value", req.Value),
 	)
 
 	res := handleRequest(ctx, req)
@@ -41,57 +42,58 @@ func process(ctx context.Context, conn net.Conn) {
 
 // TODO: be able to pass in DBRequest right into storage functions, such as storage.CreateUser(req)
 // TODO: perhaps make response enums to avoid magic strings
-func handleRequest(ctx context.Context, req DBRequest) string {
+func handleRequest(ctx context.Context, req dbrequest.DBRequest) string {
 	logger := log.LoggerFromContext(ctx)
 
 	if !req.Validate() {
 		logger.Info(
 			"server.handleRequest(): bad request was received",
-			zap.String("operation", string(req.op)), zap.String("user", req.user), zap.String("table", req.table), zap.String("key", req.key), zap.String("value", req.value),
+			zap.String("operation", string(req.Op)), zap.String("user", req.User), zap.String("table", req.Table), zap.String("key", req.Key), zap.String("value", req.Value),
 		)
 		return "400 BAD REQUEST"
 	}
 
-	switch req.op {
-	case CreateUser:
+	switch req.Op {
+	case dbrequest.CreateUser:
 		if err := storage.AddUser(ctx, req); err != nil {
-			logger.Warn("server.handleRequest(): unable to add user", zap.String("user", req.user), zap.Error(err))
+			logger.Warn("server.handleRequest(): unable to add user", zap.String("user", req.User), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
-	case DeleteUser:
+	case dbrequest.DeleteUser:
 		if err := storage.DeleteUser(ctx, req); err != nil {
-			logger.Warn("server.handleRequest(): unable to delete user", zap.String("user", req.user), zap.Error(err))
+			logger.Warn("server.handleRequest(): unable to delete user", zap.String("user", req.User), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
-	case CreateTable:
-		if err := storage.CreateTable(ctx, req); err != nil {
-			logger.Warn("server.handleRequest(): unable to create table", zap.String("table", req.table), zap.Error(err))
+	case dbrequest.CreateTable:
+		if err := storage.AddTable(ctx, req); err != nil {
+			logger.Warn("server.handleRequest(): unable to create table", zap.String("table", req.Table), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
-	case DeleteTable:
+	case dbrequest.DeleteTable:
 		if err := storage.DeleteTable(ctx, req); err != nil {
-			logger.Warn("server.handleRequest(): unable to delete table", zap.String("table", req.table), zap.Error(err))
+			logger.Warn("server.handleRequest(): unable to delete table", zap.String("table", req.Table), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
-	case AddKV:
+	case dbrequest.AddKV:
 		if err := storage.AddKV(ctx, req); err != nil {
-			logger.Warn("server.handleRequest(): unable to create KV", zap.String("key", req.key), zap.String("value", req.value) zap.Error(err))
+			logger.Warn("server.handleRequest(): unable to create KV", zap.String("key", req.Key), zap.String("value", req.Value), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
-	case GetKV:
-		if err := storage.GetKV(ctx, req); err != nil {
-			logger.Warn("server.handleRequest(): unable to get KV", zap.String("key", req.key), zap.Error(err))
+	case dbrequest.GetKV:
+		val, err := storage.ReadKV(ctx, req)
+		if err != nil {
+			logger.Warn("server.handleRequest(): unable to get KV", zap.String("key", req.Key), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
-		return "200 OK"
-	case DelKV:
-		if err := storage.DelKV(ctx, req); err != nil {
-			logger.Warn("server.handleRequest(): unable to delete KV", zap.String("key", req.key), zap.Error(err))
+		return fmt.Sprintf("%s\n200 OK", val)
+	case dbrequest.DelKV:
+		if err := storage.RemoveKV(ctx, req); err != nil {
+			logger.Warn("server.handleRequest(): unable to delete KV", zap.String("key", req.Key), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
