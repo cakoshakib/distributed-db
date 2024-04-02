@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"net"
-	"os"
-	
-	"go.uber.org/zap"
+
 	log "github.com/cakoshakib/distributed-db/commons"
+	"go.uber.org/zap"
 )
 
 type server struct {
@@ -44,10 +43,8 @@ func (s server) Start(ctx context.Context) {
 				logger.Info("server.start(): listener closed")
 				break
 			}
-			
 			logger.Error("server.start() error", zap.Error(err))
 		}
-
 		go process(ctx, conn)
 	}
 }
@@ -57,6 +54,5 @@ func (s server) Stop(ctx context.Context) {
 	logger.Info("server.close(): closing server")
 	if err := s.listener.Close(); err != nil {
 		logger.Error("server.close(): error closing server", zap.Error(err))
-		os.Exit(1)
 	}
 }

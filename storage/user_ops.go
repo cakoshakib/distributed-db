@@ -37,11 +37,12 @@ func DeleteUser(user string) {
 	fmt.Println("removed user " + user)
 }
 
-func AddUser(user string) {
+func AddUser(user string) error {
 	fmt.Println("attempting to add user " + user)
 	if err := add_user_to_file(user); err != nil {
 		fmt.Printf("err: %v\n", err)
-		return
+		return err
 	}
 	fmt.Println("created user " + user)
+	return nil
 }
