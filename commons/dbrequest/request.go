@@ -67,6 +67,7 @@ func NewRequest(s string) DBRequest {
 			param = strings.Trim(param, `"`)
 			param = strings.Replace(param, `\"`, `"`, -1)
 			param = strings.Replace(param, `\\`, `\`, -1)
+			param = strings.Replace(param, `\;`, ";", -1)
 			params = append(params, param)
 		}
 	}
@@ -74,6 +75,10 @@ func NewRequest(s string) DBRequest {
 	paramFields := []*string{&req.User, &req.Table, &req.Key, &req.Value}
 	for i, param := range params {
 		if i < len(paramFields) {
+			// removing trailing semicolon on last parameter
+			if i == len(params)-1 { 
+				param = strings.TrimSuffix(param, ";")
+			}
 			*paramFields[i] = param
 		}
 	}
