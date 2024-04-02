@@ -76,7 +76,7 @@ func NewRequest(s string) DBRequest {
 	for i, param := range params {
 		if i < len(paramFields) {
 			// removing trailing semicolon on last parameter
-			if i == len(params)-1 { 
+			if i == len(params)-1 {
 				param = strings.TrimSuffix(param, ";")
 			}
 			*paramFields[i] = param
