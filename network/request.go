@@ -1,5 +1,10 @@
 package network
 
+import (
+	"strings"
+	"regexp"
+)
+
 type operation string
 
 type DBRequest struct {
@@ -19,17 +24,17 @@ const (
 	CreateUser  = operation("cu")
 )
 
-func StringToOperation(s string) {
+func StringToOperation(s string) operation {
 	switch s {
-	case str(Get):
+	case string(Get):
 		return Get
-	case str(Del):
+	case string(Del):
 		return Del
-	case str(Add):
+	case string(Add):
 		return Add
-	case str(CreateTable):
+	case string(CreateTable):
 		return CreateTable
-	case str(CreateUser):
+	case string(CreateUser):
 		return CreateUser
 	default:
 		return Unspecified
@@ -45,7 +50,7 @@ func NewRequest(s string) DBRequest {
 	pattern := `^(\w+)\s+((?:\s*(?:"[^"\\]*(?:\\.[^"\\]*)*"|\S+))*)\s*;?$`
 	re := regexp.MustCompile(pattern)
 
-	matches := re.FindStringSubmatch(request)
+	matches := re.FindStringSubmatch(s)
 	if len(matches) > 2 {
 		operation = StringToOperation(matches[1])
 		req.op = operation

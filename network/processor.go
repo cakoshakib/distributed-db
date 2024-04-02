@@ -29,11 +29,11 @@ func process(ctx context.Context, conn net.Conn) {
 	req := NewRequest(msg)
 	logger.Info(
 		"server.process(): received request", zap.String("remoteAddr", remoteAddr),
-		zap.String("operation", req.op), zap.String("user", req.user), zap.String("table", req.table), zap.String("key", req.key), zap.String("value", req.value),
+		zap.String("operation", string(req.op)), zap.String("user", req.user), zap.String("table", req.table), zap.String("key", req.key), zap.String("value", req.value),
 	)
 
 	res := handleRequest(ctx, req)
-	if _, err := conn.Write([]byte(response + "\n")); err != nil {
+	if _, err := conn.Write([]byte(res + "\n")); err != nil {
 		logger.Error("Error writing to connection", zap.String("remoteAddr", remoteAddr), zap.String("response", res), zap.Error(err))
 	}
 }
@@ -46,15 +46,15 @@ func handleRequest(ctx context.Context, req DBRequest) string {
 	if !req.Validate() {
 		logger.Info(
 			"server.handleRequest(): bad request was received",
-			zap.String("operation", req.op), zap.String("user", req.user), zap.String("table", req.table), zap.String("key", req.key), zap.String("value", req.value),
+			zap.String("operation", string(req.op)), zap.String("user", req.user), zap.String("table", req.table), zap.String("key", req.key), zap.String("value", req.value),
 		)
 		return "400 BAD REQUEST"
 	}
 
 	switch req.op {
 	case CreateUser:
-		if err := storage.CreateUser(req.user); err != nil {
-			logger.Warn("server.handleRequest(): unable to create user", zap.String("user", req.user), zap.Error(err))
+		if err := storage.AddUser(req.user); err != nil {
+			logger.Warn("server.handleRequest(): unable to add user", zap.String("user", req.user), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
