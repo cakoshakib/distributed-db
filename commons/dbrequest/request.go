@@ -1,4 +1,4 @@
-package network
+package dbrequest
 
 import (
 	"strings"
@@ -17,25 +17,31 @@ type DBRequest struct {
 
 const (
 	Unspecified = operation("")
-	Get         = operation("get")
-	Del         = operation("del")
-	Add         = operation("add")
+	GetKV       = operation("get")
+	DelKV       = operation("delkv")
+	AddKV       = operation("add")
 	CreateTable = operation("ct")
+	DeleteTable = operation("deltable")
 	CreateUser  = operation("cu")
+	DeleteUser  = operation("deluser")
 )
 
 func StringToOperation(s string) operation {
 	switch s {
-	case string(Get):
-		return Get
-	case string(Del):
-		return Del
-	case string(Add):
-		return Add
+	case string(GetKV):
+		return GetKV
+	case string(DelKV):
+		return DelKV
+	case string(AddKV):
+		return AddKV
 	case string(CreateTable):
 		return CreateTable
+	case string(DeleteTable):
+		return DeleteTable
 	case string(CreateUser):
 		return CreateUser
+	case string(DeleteUser):
+		return DeleteUser
 	default:
 		return Unspecified
 	}
@@ -77,14 +83,14 @@ func NewRequest(s string) DBRequest {
 
 func (r DBRequest) Validate() bool {
 	switch r.op {
-	case Get, Del:
+	case GetKV, DelKV:
 		return r.user != "" && r.table != "" && r.key != ""
-	case Add:
+	case AddKV:
 		// r.value != "" is not included as the value could be the null string, ""
 		return r.user != "" && r.table != "" && r.key != ""
-	case CreateTable:
+	case CreateTable, DeleteTable:
 		return r.user != "" && r.table != ""
-	case CreateUser:
+	case CreateUser, DeleteUser:
 		return r.user != ""
 	default:
 		return false
