@@ -14,7 +14,7 @@ import (
 
 // BUG: if user sends ; as part of their data, then the reader terminates early with unread content.
 // we should standardize something like "\;" to represent a semicolon in user data with escape sequences and modify the logic below accordingly.
-func process(ctx context.Context, conn net.Conn) {
+func process(ctx context.Context, conn net.Conn, store storage.Store) {
 	logger := log.LoggerFromContext(ctx)
 	remoteAddr := conn.RemoteAddr().String()
 	logger.Info("server.process(): received connection", zap.String("remoteAddr", remoteAddr))
@@ -34,7 +34,7 @@ func process(ctx context.Context, conn net.Conn) {
 		zap.String("operation", string(req.Op)), zap.String("user", req.User), zap.String("table", req.Table), zap.String("key", req.Key), zap.String("value", req.Value),
 	)
 
-	res := handleRequest(ctx, req)
+	res := handleRequest(ctx, req, store)
 	if _, err := conn.Write([]byte(res + "\n")); err != nil {
 		logger.Error("Error writing to connection", zap.String("remoteAddr", remoteAddr), zap.String("response", res), zap.Error(err))
 	}
@@ -42,7 +42,7 @@ func process(ctx context.Context, conn net.Conn) {
 
 // TODO: be able to pass in DBRequest right into storage functions, such as storage.CreateUser(req)
 // TODO: perhaps make response enums to avoid magic strings
-func handleRequest(ctx context.Context, req dbrequest.DBRequest) string {
+func handleRequest(ctx context.Context, req dbrequest.DBRequest, store storage.Store) string {
 	logger := log.LoggerFromContext(ctx)
 
 	if !req.Validate() {
@@ -55,44 +55,44 @@ func handleRequest(ctx context.Context, req dbrequest.DBRequest) string {
 
 	switch req.Op {
 	case dbrequest.CreateUser:
-		if err := storage.AddUser(ctx, req); err != nil {
+		if err := store.AddUser(req); err != nil {
 			logger.Warn("server.handleRequest(): unable to add user", zap.String("user", req.User), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
 	case dbrequest.DeleteUser:
-		if err := storage.DeleteUser(ctx, req); err != nil {
+		if err := store.DeleteUser(req); err != nil {
 			logger.Warn("server.handleRequest(): unable to delete user", zap.String("user", req.User), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
 	case dbrequest.CreateTable:
-		if err := storage.AddTable(ctx, req); err != nil {
+		if err := store.AddTable(req); err != nil {
 			logger.Warn("server.handleRequest(): unable to create table", zap.String("table", req.Table), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
 	case dbrequest.DeleteTable:
-		if err := storage.DeleteTable(ctx, req); err != nil {
+		if err := store.DeleteTable(req); err != nil {
 			logger.Warn("server.handleRequest(): unable to delete table", zap.String("table", req.Table), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
 	case dbrequest.AddKV:
-		if err := storage.AddKV(ctx, req); err != nil {
+		if err := store.AddKV(req); err != nil {
 			logger.Warn("server.handleRequest(): unable to create KV", zap.String("key", req.Key), zap.String("value", req.Value), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return "200 OK"
 	case dbrequest.GetKV:
-		val, err := storage.ReadKV(ctx, req)
+		val, err := store.ReadKV(req)
 		if err != nil {
 			logger.Warn("server.handleRequest(): unable to get KV", zap.String("key", req.Key), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}
 		return fmt.Sprintf("%s\n200 OK", val)
 	case dbrequest.DelKV:
-		if err := storage.RemoveKV(ctx, req); err != nil {
+		if err := store.RemoveKV(req); err != nil {
 			logger.Warn("server.handleRequest(): unable to delete KV", zap.String("key", req.Key), zap.Error(err))
 			return "401 REQUEST FAILED"
 		}

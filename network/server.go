@@ -6,11 +6,13 @@ import (
 	"net"
 
 	log "github.com/cakoshakib/distributed-db/commons"
+	"github.com/cakoshakib/distributed-db/storage"
 	"go.uber.org/zap"
 )
 
 type server struct {
 	listener net.Listener
+	store    storage.Store
 	//logger   interface{}
 }
 
@@ -45,7 +47,7 @@ func (s server) Start(ctx context.Context) {
 			}
 			logger.Error("server.start() error", zap.Error(err))
 		}
-		go process(ctx, conn)
+		go process(ctx, conn, s.store)
 	}
 }
 

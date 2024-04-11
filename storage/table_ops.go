@@ -1,11 +1,9 @@
 package storage
 
 import (
-	"context"
 	"fmt"
 	"os"
 
-	log "github.com/cakoshakib/distributed-db/commons"
 	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	"go.uber.org/zap"
 )
@@ -36,22 +34,20 @@ func remove_table_from_file(user string, table string) error {
 	return nil
 }
 
-func AddTable(ctx context.Context, req dbrequest.DBRequest) error {
-	logger := log.LoggerFromContext(ctx)
+func (s *Store) AddTable(req dbrequest.DBRequest) error {
 	if err := add_table_to_file(req.User, req.Table); err != nil {
-		logger.Error("storage: add table error", zap.Error(err))
+		s.logger.Error("storage: add table error", zap.Error(err))
 		return err
 	}
-	logger.Info("storage: add table success", zap.String("user", req.User), zap.String("table", req.Table))
+	s.logger.Info("storage: add table success", zap.String("user", req.User), zap.String("table", req.Table))
 	return nil
 }
 
-func DeleteTable(ctx context.Context, req dbrequest.DBRequest) error {
-	logger := log.LoggerFromContext(ctx)
+func (s *Store) DeleteTable(req dbrequest.DBRequest) error {
 	if err := remove_table_from_file(req.User, req.Table); err != nil {
-		logger.Info("storage: delete table error", zap.Error(err))
+		s.logger.Info("storage: delete table error", zap.Error(err))
 		return err
 	}
-	logger.Info("storage: delete table success", zap.String("user", req.User), zap.String("table", req.Table))
+	s.logger.Info("storage: delete table success", zap.String("user", req.User), zap.String("table", req.Table))
 	return nil
 }
