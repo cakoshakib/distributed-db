@@ -13,10 +13,10 @@ import (
 type server struct {
 	listener net.Listener
 	store    storage.Store
-	//logger   interface{}
 }
 
 func NewServer(ctx context.Context, port string) (server, error) {
+	logger := log.LoggerFromContext(ctx)
 	server := server{}
 
 	listener, err := net.Listen("tcp", ":"+port)
@@ -24,6 +24,8 @@ func NewServer(ctx context.Context, port string) (server, error) {
 		return server, err
 	}
 	server.listener = listener
+
+	server.store = *storage.New(logger)
 
 	return server, nil
 }
