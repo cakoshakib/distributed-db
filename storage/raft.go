@@ -46,6 +46,7 @@ func (s *Store) Open(firstNode bool, nodeID string) error {
 		return err
 	}
 
+	// probably want to persist these stores
 	snapshots := raft.NewInmemSnapshotStore()
 	logStore := raft.NewInmemStore()
 	stableStore := raft.NewInmemStore()
