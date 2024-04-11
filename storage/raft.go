@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
+	"os"
 	"time"
 
 	"github.com/cakoshakib/distributed-db/commons/dbrequest"
@@ -26,8 +28,43 @@ func New(logger *zap.Logger) *Store {
 	}
 }
 
-func (s *Store) Open(nodeID string) error {
+func (s *Store) Open(firstNode bool, nodeID string) error {
 	// open raft store for this node
+	config := raft.DefaultConfig()
+	config.LocalID = raft.ServerID(nodeID)
+
+	// Setup Raft communication.
+	addr, err := net.ResolveTCPAddr("tcp", s.RaftBind)
+	if err != nil {
+		return err
+	}
+	transport, err := raft.NewTCPTransport(s.RaftBind, addr, 3, 10*time.Second, os.Stderr)
+	if err != nil {
+		return err
+	}
+
+	snapshots := raft.NewInmemSnapshotStore()
+	logStore := raft.NewInmemStore()
+	stableStore := raft.NewInmemStore()
+
+	ra, err := raft.NewRaft(config, s, logStore, stableStore, snapshots, transport)
+	if err != nil {
+		return fmt.Errorf("new raft: %s", err)
+	}
+	s.raft = ra
+
+	if firstNode {
+		configuration := raft.Configuration{
+			Servers: []raft.Server{
+				{
+					ID:      config.LocalID,
+					Address: transport.LocalAddr(),
+				},
+			},
+		}
+		ra.BootstrapCluster(configuration)
+	}
+
 	return nil
 }
 
@@ -57,7 +94,7 @@ func (s *Store) HandleRequest(req dbrequest.DBRequest) error {
 }
 
 // applies Raft log entry (dbrequest) to store
-func (s *Store) Apply(log *raft.Log) {
+func (s *Store) Apply(log *raft.Log) interface{} {
 	var req dbrequest.DBRequest
 	if err := json.Unmarshal(log.Data, &req); err != nil {
 		s.logger.Error("raft: failed to unmarshal request", zap.Error(err))
@@ -95,8 +132,8 @@ func (s *Store) Apply(log *raft.Log) {
 		}
 	default:
 		s.logger.Error("raft.Apply(): unrecognized log request", zap.String("operation", string(req.Op)))
-		return
 	}
+	return nil
 }
 
 // snapshotting is an optimization that we should actually implement later
