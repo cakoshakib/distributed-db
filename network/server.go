@@ -14,10 +14,10 @@ type server struct {
 	//logger   interface{}
 }
 
-func NewServer(ctx context.Context) (server, error) {
+func NewServer(ctx context.Context, port string) (server, error) {
 	server := server{}
 
-	listener, err := net.Listen("tcp", ":8080")
+	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		return server, err
 	}
