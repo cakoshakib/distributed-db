@@ -12,11 +12,10 @@ import (
 
 type server struct {
 	listener net.Listener
-	store    storage.Store
+	store    *storage.Store
 }
 
-func NewServer(ctx context.Context, port string) (server, error) {
-	logger := log.LoggerFromContext(ctx)
+func NewServer(ctx context.Context, port string, store *storage.Store) (server, error) {
 	server := server{}
 
 	listener, err := net.Listen("tcp", ":"+port)
@@ -25,7 +24,7 @@ func NewServer(ctx context.Context, port string) (server, error) {
 	}
 	server.listener = listener
 
-	server.store = *storage.New(logger)
+	server.store = store
 
 	return server, nil
 }

@@ -15,7 +15,7 @@ import (
 
 // BUG: if user sends ; as part of their data, then the reader terminates early with unread content.
 // we should standardize something like "\;" to represent a semicolon in user data with escape sequences and modify the logic below accordingly.
-func process(ctx context.Context, conn net.Conn, store storage.Store) {
+func process(ctx context.Context, conn net.Conn, store *storage.Store) {
 	logger := log.LoggerFromContext(ctx)
 	remoteAddr := conn.RemoteAddr().String()
 	logger.Info("server.process(): received connection", zap.String("remoteAddr", remoteAddr))
@@ -42,8 +42,13 @@ func process(ctx context.Context, conn net.Conn, store storage.Store) {
 			return
 		}
 
-		// TODO, implement Join in store
-		logger.Warn("server.process(): join requests unimplemented")
+		// join in raft store
+		if err := store.Join(req.NodeID, req.Address); err != nil {
+			logger.Info(
+				"server.process(): error joining node to store", zap.String("remoteAddr", remoteAddr),
+				zap.String("operation", joinrequest.Join), zap.String("nodeID", req.NodeID), zap.String("address", req.Address),
+			)
+		}
 
 	} else {
 		// request is a dbrequest (or invalid one)
@@ -62,7 +67,7 @@ func process(ctx context.Context, conn net.Conn, store storage.Store) {
 
 // TODO: be able to pass in DBRequest right into storage functions, such as storage.CreateUser(req)
 // TODO: perhaps make response enums to avoid magic strings
-func handleRequest(ctx context.Context, req dbrequest.DBRequest, store storage.Store) string {
+func handleRequest(ctx context.Context, req dbrequest.DBRequest, store *storage.Store) string {
 	logger := log.LoggerFromContext(ctx)
 
 	if !req.Validate() {

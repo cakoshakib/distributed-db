@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 
@@ -28,9 +29,25 @@ var (
 
 func init() {
 	flag.StringVar(&tcpPort, "tcpPort", DefaultTCPPort, "TCP Port for client requests")
-	flag.StringVar(&nodeID, "id", "", "Raft Node ID")
 	flag.StringVar(&raftAddr, "raftAddr", DefaultRaftAddr, "Raft binding address")
+	flag.StringVar(&nodeID, "id", raftAddr, "Raft Node ID (raftAddr by default)")
 	flag.StringVar(&joinAddr, "joinAddr", "", "Client-facing address to join Raft cluster")
+}
+
+func joinCluster(logger *zap.Logger) error {
+	// dial the join address
+	conn, err := net.Dial("tcp", joinAddr)
+	if err != nil {
+		logger.Error("joinCluster(): could not dial join address", zap.String("joinAddr", joinAddr))
+		return err
+	}
+	defer conn.Close()
+	payload := []byte(fmt.Sprintf("join %s %s;", nodeID, raftAddr))
+	if _, err := conn.Write(payload); err != nil {
+		logger.Error("joinCluster(): error sending join request", zap.String("joinAddr", joinAddr), zap.Error(err))
+		return err
+	}
+	return nil
 }
 
 func main() {
@@ -52,13 +69,18 @@ func main() {
 	}
 
 	// init client-facing server
-	server, err := network.NewServer(ctx, tcpPort)
+	server, err := network.NewServer(ctx, tcpPort, store)
 	if err != nil {
 		logger.Error("server: failed initialization with error", zap.Error(err))
 		return
 	}
-	server.Start(ctx)
 
 	// send join request if necessary
+	if joinAddr != "" {
+		if err := joinCluster(logger); err != nil {
+			logger.Fatal("raft: failed to join cluster", zap.String("joinAddr", joinAddr), zap.Error(err))
+		}
+	}
 
+	server.Start(ctx)
 }

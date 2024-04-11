@@ -19,6 +19,9 @@ cu [user];
 DELETE USER
 deleteuser [user];
 
+JOIN CLUSTER
+join [node id] [raft address];
+
 RESPONSES
 200 OK
 201 CREATED (table)

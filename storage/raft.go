@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	"time"
@@ -62,7 +63,8 @@ func (s *Store) Open(firstNode bool, nodeID string) error {
 				},
 			},
 		}
-		ra.BootstrapCluster(configuration)
+		s.logger.Info("raft.Open(): bootstrapping cluster", zap.String("id", string(config.LocalID)), zap.String("address", string(transport.LocalAddr())), zap.Any("config", configuration))
+		s.raft.BootstrapCluster(configuration)
 	}
 
 	return nil
@@ -76,6 +78,7 @@ func (s *Store) Join(nodeID, addr string) error {
 		s.logger.Error("raft.Join(): failed to get config", zap.Error(err))
 		return err
 	}
+	s.logger.Info("raft.Join(): got config")
 
 	raftID := raft.ServerID(nodeID)
 	raftAddr := raft.ServerAddress(addr)
@@ -106,10 +109,27 @@ func (s *Store) Join(nodeID, addr string) error {
 
 func (s *Store) Restore(rc io.ReadCloser) error {
 	// restores store from clean state
-	// - clean data/ folder
-	// - run through each DBRequest and apply
+	// clean data folder
+	dataDir, err := ioutil.ReadDir("data/")
+	if err != nil {
+		s.logger.Error("raft.Restore(): could not read data dir", zap.Error(err))
+	}
+	for _, d := range dataDir {
+		os.RemoveAll(user_path(d.Name()))
+	}
+	// run through each DBRequest and apply
+	decoder := json.NewDecoder(rc)
+	for decoder.More() {
+		var op dbrequest.DBRequest
+		err := decoder.Decode(&op)
+		if err != nil {
+			return fmt.Errorf("could not decode restore to op: %s", err)
+		}
+		// not exactly sure if applying logs is a valid way to restore state but let's hope it is :3
+		s.HandleRequest(op)
+	}
 
-	return nil
+	return rc.Close()
 }
 
 func (s *Store) HandleRequest(req dbrequest.DBRequest) error {
