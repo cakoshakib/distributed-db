@@ -8,11 +8,12 @@ import (
 type operation string
 
 type DBRequest struct {
-	Op    operation
-	User  string
-	Table string
-	Key   string
-	Value string
+	Op      operation
+	User    string
+	Table   string
+	Key     string
+	Value   string
+	IsWrite bool
 }
 
 const (
@@ -47,6 +48,10 @@ func StringToOperation(s string) operation {
 	}
 }
 
+func opIsWrite(op operation) bool {
+	return op != GetKV
+}
+
 func NewRequest(s string) DBRequest {
 	req := DBRequest{}
 	operation := Unspecified
@@ -60,6 +65,7 @@ func NewRequest(s string) DBRequest {
 	if len(matches) > 2 {
 		operation = StringToOperation(matches[1])
 		req.Op = operation
+		req.IsWrite = opIsWrite(operation)
 		paramsBlob := matches[2]
 
 		paramsMatches := regexp.MustCompile(`"[^"\\]*(?:\\.[^"\\]*)*"|\S+`).FindAllString(paramsBlob, -1)

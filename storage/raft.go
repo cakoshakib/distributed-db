@@ -2,12 +2,16 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"time"
 
 	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	"github.com/hashicorp/raft"
 	"go.uber.org/zap"
 )
+
+const raftTimeout = 10 * time.Second
 
 // we need to treat this store as a finite state machine
 type Store struct {
@@ -37,6 +41,19 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 	// - clean data/ folder
 	// - run through each DBRequest and apply
 	return nil
+}
+
+func (s *Store) HandleRequest(req dbrequest.DBRequest) error {
+	// only leader can take write requests
+	if req.IsWrite && s.raft.State() != raft.Leader {
+		return fmt.Errorf("write op not sent to leader")
+	}
+	b, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+	f := s.raft.Apply(b, raftTimeout)
+	return f.Error()
 }
 
 // applies Raft log entry (dbrequest) to store
