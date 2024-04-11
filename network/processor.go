@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"context"
 	"net"
+	"strings"
 
 	log "github.com/cakoshakib/distributed-db/commons"
 	"github.com/cakoshakib/distributed-db/commons/dbrequest"
+	"github.com/cakoshakib/distributed-db/commons/joinrequest"
 	"github.com/cakoshakib/distributed-db/storage"
 	"go.uber.org/zap"
 )
@@ -27,15 +29,29 @@ func process(ctx context.Context, conn net.Conn, store storage.Store) {
 		return
 	}
 
-	req := dbrequest.NewRequest(msg)
-	logger.Info(
-		"server.process(): received request", zap.String("remoteAddr", remoteAddr),
-		zap.String("operation", string(req.Op)), zap.String("user", req.User), zap.String("table", req.Table), zap.String("key", req.Key), zap.String("value", req.Value),
-	)
+	if strings.HasPrefix(msg, joinrequest.Join) {
+		// request is a joinrequest
+		req := joinrequest.NewRequest(msg)
+		logger.Info(
+			"server.process(): received request", zap.String("remoteAddr", remoteAddr),
+			zap.String("operation", joinrequest.Join), zap.String("nodeID", req.NodeID), zap.String("address", req.Address),
+		)
 
-	res := handleRequest(ctx, req, store)
-	if _, err := conn.Write([]byte(res + "\n")); err != nil {
-		logger.Error("Error writing to connection", zap.String("remoteAddr", remoteAddr), zap.String("response", res), zap.Error(err))
+		// TODO, implement Join in store
+		logger.Warn("server.process(): join requests unimplemented")
+
+	} else {
+		// request is a dbrequest (or invalid one)
+		req := dbrequest.NewRequest(msg)
+		logger.Info(
+			"server.process(): received request", zap.String("remoteAddr", remoteAddr),
+			zap.String("operation", string(req.Op)), zap.String("user", req.User), zap.String("table", req.Table), zap.String("key", req.Key), zap.String("value", req.Value),
+		)
+
+		res := handleRequest(ctx, req, store)
+		if _, err := conn.Write([]byte(res + "\n")); err != nil {
+			logger.Error("Error writing to connection", zap.String("remoteAddr", remoteAddr), zap.String("response", res), zap.Error(err))
+		}
 	}
 }
 
