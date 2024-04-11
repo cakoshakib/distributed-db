@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"io"
 
 	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	"github.com/hashicorp/raft"
@@ -10,7 +11,6 @@ import (
 
 // we need to treat this store as a finite state machine
 type Store struct {
-	RaftDir  string
 	RaftBind string
 	raft     *raft.Raft
 	logger   *zap.Logger
@@ -32,6 +32,14 @@ func (s *Store) Join(nodeId, addr string) error {
 	return nil
 }
 
+func (s *Store) Restore(rc io.ReadCloser) error {
+	// restores store from clean state
+	// - clean data/ folder
+	// - run through each DBRequest and apply
+	return nil
+}
+
+// applies Raft log entry (dbrequest) to store
 func (s *Store) Apply(log *raft.Log) {
 	var req dbrequest.DBRequest
 	if err := json.Unmarshal(log.Data, &req); err != nil {
@@ -72,4 +80,13 @@ func (s *Store) Apply(log *raft.Log) {
 		s.logger.Error("raft.Apply(): unrecognized log request", zap.String("operation", string(req.Op)))
 		return
 	}
+}
+
+// snapshotting is an optimization that we should actually implement later
+type snapshotNoop struct{}
+
+func (sn snapshotNoop) Persist(_ raft.SnapshotSink) error { return nil }
+func (sn snapshotNoop) Release()                          {}
+func (store *Store) Snapshot() (raft.FSMSnapshot, error) {
+	return snapshotNoop{}, nil
 }
