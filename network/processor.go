@@ -37,6 +37,11 @@ func process(ctx context.Context, conn net.Conn, store storage.Store) {
 			zap.String("operation", joinrequest.Join), zap.String("nodeID", req.NodeID), zap.String("address", req.Address),
 		)
 
+		if !req.Validate() {
+			logger.Info("server.process(): join request is invalid, not processing")
+			return
+		}
+
 		// TODO, implement Join in store
 		logger.Warn("server.process(): join requests unimplemented")
 
