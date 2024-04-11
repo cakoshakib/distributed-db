@@ -8,9 +8,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func add_table_to_file(user string, table string) error {
-	user_path := user_path(user)
-	table_path := table_path(user, table)
+func add_table_to_file(dataDir, user, table string) error {
+	user_path := user_path(dataDir, user)
+	table_path := table_path(dataDir, user, table)
 	// TODO: improve by making error structs
 	if !file_exists(user_path) {
 		return fmt.Errorf("user does not exist %s", user)
@@ -23,8 +23,7 @@ func add_table_to_file(user string, table string) error {
 	return nil
 }
 
-func remove_table_from_file(user string, table string) error {
-	table_path := table_path(user, table)
+func remove_table_from_file(table_path string) error {
 	// TODO: improve by making error structs
 	if file_exists(table_path) {
 		if err := os.Remove(table_path); err != nil {
@@ -35,7 +34,7 @@ func remove_table_from_file(user string, table string) error {
 }
 
 func (s *Store) AddTable(req dbrequest.DBRequest) error {
-	if err := add_table_to_file(req.User, req.Table); err != nil {
+	if err := add_table_to_file(s.dataDir, req.User, req.Table); err != nil {
 		s.logger.Error("storage: add table error", zap.Error(err))
 		return err
 	}
@@ -44,7 +43,7 @@ func (s *Store) AddTable(req dbrequest.DBRequest) error {
 }
 
 func (s *Store) DeleteTable(req dbrequest.DBRequest) error {
-	if err := remove_table_from_file(req.User, req.Table); err != nil {
+	if err := remove_table_from_file(table_path(s.dataDir, req.User, req.Table)); err != nil {
 		s.logger.Info("storage: delete table error", zap.Error(err))
 		return err
 	}

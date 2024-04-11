@@ -10,8 +10,7 @@ import (
 
 // TODO: initialize data/ folder on server startup if it doesnt exist,
 // otherwise, we have to manually create data/ before running funcs below
-func add_user_to_file(user string) error {
-	user_path := user_path(user)
+func add_user_to_file(user_path string) error {
 	if !file_exists(user_path) {
 		err := os.Mkdir(user_path, 0755)
 		if err != nil {
@@ -21,8 +20,7 @@ func add_user_to_file(user string) error {
 	return nil
 }
 
-func remove_user_from_file(user string) error {
-	user_path := user_path(user)
+func remove_user_from_file(user_path string) error {
 	if file_exists(user_path) {
 		if err := os.RemoveAll(user_path); err != nil {
 			return fmt.Errorf("error removing dir %s, may have tables", user_path)
@@ -32,7 +30,7 @@ func remove_user_from_file(user string) error {
 }
 
 func (s *Store) DeleteUser(req dbrequest.DBRequest) error {
-	if err := remove_user_from_file(req.User); err != nil {
+	if err := remove_user_from_file(user_path(s.dataDir, req.User)); err != nil {
 		s.logger.Error("storage: delete user error", zap.Error(err))
 		return err
 	}
@@ -41,7 +39,7 @@ func (s *Store) DeleteUser(req dbrequest.DBRequest) error {
 }
 
 func (s *Store) AddUser(req dbrequest.DBRequest) error {
-	if err := add_user_to_file(req.User); err != nil {
+	if err := add_user_to_file(user_path(s.dataDir, req.User)); err != nil {
 		s.logger.Error("storage: add user error", zap.Error(err))
 		return err
 	}

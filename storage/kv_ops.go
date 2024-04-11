@@ -10,46 +10,47 @@ import (
 	"go.uber.org/zap"
 )
 
-func read_json_data(user string, table string) map[string]interface{} {
-	file, _ := ioutil.ReadFile(table_path(user, table))
+func read_json_data(path string) map[string]interface{} {
+	file, _ := ioutil.ReadFile(path)
 	data := map[string]interface{}{}
 	json.Unmarshal(file, &data)
 	return data
 }
 
-func write_json_data(user string, table string, data []byte) error {
-	return os.WriteFile(table_path(user, table), data, 0777)
+func write_json_data(path string, data []byte) error {
+	return os.WriteFile(path, data, 0777)
 }
 
-func add_kv_to_file(user string, table string, key string, value interface{}) error {
-	data := read_json_data(user, table)
+func add_kv_to_file(path string, key string, value interface{}) error {
+	fmt.Println("PATH", path)
+	data := read_json_data(path)
 	data[key] = value
 	m, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("error marshaling data %v", data)
 	}
-	if err := write_json_data(user, table, m); err != nil {
+	if err := write_json_data(path, m); err != nil {
 		return fmt.Errorf("error writing json to file %v", data)
 	}
 
 	return nil
 }
 
-func remove_kv_from_file(user string, table string, key string) error {
-	data := read_json_data(user, table)
+func remove_kv_from_file(path string, key string) error {
+	data := read_json_data(path)
 	delete(data, key)
 	m, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("error marshaling data %v", data)
 	}
-	if err := write_json_data(user, table, m); err != nil {
+	if err := write_json_data(path, m); err != nil {
 		return fmt.Errorf("error writing json to file %v", data)
 	}
 	return nil
 }
 
-func read_kv_from_file(user string, table string, key string) (interface{}, error) {
-	data := read_json_data(user, table)
+func read_kv_from_file(path string, key string) (interface{}, error) {
+	data := read_json_data(path)
 	value, exists := data[key]
 	if !exists {
 		return nil, fmt.Errorf("key %s not found", key)
@@ -58,7 +59,7 @@ func read_kv_from_file(user string, table string, key string) (interface{}, erro
 }
 
 func (s *Store) ReadKV(req dbrequest.DBRequest) (string, error) {
-	data, err := read_kv_from_file(req.User, req.Table, req.Key)
+	data, err := read_kv_from_file(table_path(s.dataDir, req.User, req.Table), req.Key)
 	if err != nil {
 		s.logger.Error("storage: readkv error", zap.Error(err))
 		return "", err
@@ -83,7 +84,7 @@ func (s *Store) AddKV(req dbrequest.DBRequest) error {
 		value = req.Value
 	}
 
-	if err := add_kv_to_file(req.User, req.Table, req.Key, value); err != nil {
+	if err := add_kv_to_file(table_path(s.dataDir, req.User, req.Table), req.Key, value); err != nil {
 		s.logger.Error("storage: addkv error", zap.Error(err))
 		return err
 	}
@@ -93,7 +94,7 @@ func (s *Store) AddKV(req dbrequest.DBRequest) error {
 }
 
 func (s *Store) RemoveKV(req dbrequest.DBRequest) error {
-	err := remove_kv_from_file(req.User, req.Table, req.Key)
+	err := remove_kv_from_file(table_path(s.dataDir, req.User, req.Table), req.Key)
 	if err != nil {
 		s.logger.Error("storage: removekv error", zap.Error(err))
 		fmt.Printf("err: %v\n", err)

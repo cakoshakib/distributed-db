@@ -25,6 +25,7 @@ var (
 	nodeID   string
 	raftAddr string
 	joinAddr string
+	dataDir  string
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 	flag.StringVar(&raftAddr, "raftAddr", DefaultRaftAddr, "Raft binding address")
 	flag.StringVar(&nodeID, "id", raftAddr, "Raft Node ID (raftAddr by default)")
 	flag.StringVar(&joinAddr, "joinAddr", "", "Client-facing address to join Raft cluster")
+	flag.StringVar(&dataDir, "dataDir", "data/", "Directory to store data")
 }
 
 func joinCluster(logger *zap.Logger) error {
@@ -62,7 +64,7 @@ func main() {
 	logger.Info(fmt.Sprintf("received params %s %s %s %s", tcpPort, nodeID, raftAddr, joinAddr))
 
 	// init Raft store
-	store := storage.New(logger)
+	store := storage.New(logger, dataDir)
 	store.RaftBind = raftAddr
 	if err := store.Open(joinAddr == "", nodeID); err != nil {
 		logger.Error("raft: failed to open store", zap.Error(err))

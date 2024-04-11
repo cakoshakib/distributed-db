@@ -19,13 +19,15 @@ const raftTimeout = 10 * time.Second
 // we need to treat this store as a finite state machine
 type Store struct {
 	RaftBind string
+	dataDir  string
 	raft     *raft.Raft
 	logger   *zap.Logger
 }
 
-func New(logger *zap.Logger) *Store {
+func New(logger *zap.Logger, dataDir string) *Store {
 	return &Store{
-		logger: logger,
+		logger:  logger,
+		dataDir: dataDir,
 	}
 }
 
@@ -110,12 +112,12 @@ func (s *Store) Join(nodeID, addr string) error {
 func (s *Store) Restore(rc io.ReadCloser) error {
 	// restores store from clean state
 	// clean data folder
-	dataDir, err := ioutil.ReadDir("data/")
+	dataDir, err := ioutil.ReadDir(s.dataDir)
 	if err != nil {
 		s.logger.Error("raft.Restore(): could not read data dir", zap.Error(err))
 	}
 	for _, d := range dataDir {
-		os.RemoveAll(user_path(d.Name()))
+		os.RemoveAll(user_path(s.dataDir, d.Name()))
 	}
 	// run through each DBRequest and apply
 	decoder := json.NewDecoder(rc)
