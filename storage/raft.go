@@ -68,8 +68,39 @@ func (s *Store) Open(firstNode bool, nodeID string) error {
 	return nil
 }
 
-func (s *Store) Join(nodeId, addr string) error {
+func (s *Store) Join(nodeID, addr string) error {
 	// add this node to the cluster
+	s.logger.Info("raft.Join(): received join request", zap.String("nodeId", nodeID), zap.String("address", addr))
+	config := s.raft.GetConfiguration()
+	if err := config.Error(); err != nil {
+		s.logger.Error("raft.Join(): failed to get config", zap.Error(err))
+		return err
+	}
+
+	raftID := raft.ServerID(nodeID)
+	raftAddr := raft.ServerAddress(addr)
+
+	// remove node with given ID if its there
+	for _, srv := range config.Configuration().Servers {
+		if srv.ID == raftID || srv.Address == raftAddr {
+			if srv.ID == raft.ServerID(nodeID) && srv.Address == raftAddr {
+				s.logger.Info("raft.Join(): node is already part of cluster, ignoring join", zap.String("nodeId", nodeID), zap.String("address", addr))
+				return nil
+			}
+			future := s.raft.RemoveServer(srv.ID, 0, 0)
+			if err := future.Error(); err != nil {
+				return fmt.Errorf("error removing existing node %s at %s: %s", nodeID, addr, err)
+			}
+		}
+	}
+
+	indexFuture := s.raft.AddVoter(raftID, raftAddr, 0, 0)
+	if err := indexFuture.Error(); err != nil {
+		s.logger.Error("raft.Join(): failed to add voter", zap.Error(err))
+		return err
+	}
+
+	s.logger.Info("raft.Join(): successful join", zap.String("nodeId", nodeID), zap.String("address", addr))
 	return nil
 }
 
@@ -77,6 +108,7 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 	// restores store from clean state
 	// - clean data/ folder
 	// - run through each DBRequest and apply
+
 	return nil
 }
 
@@ -97,7 +129,7 @@ func (s *Store) HandleRequest(req dbrequest.DBRequest) error {
 func (s *Store) Apply(log *raft.Log) interface{} {
 	var req dbrequest.DBRequest
 	if err := json.Unmarshal(log.Data, &req); err != nil {
-		s.logger.Error("raft: failed to unmarshal request", zap.Error(err))
+		s.logger.Error("raft.Apply(): failed to unmarshal request", zap.Error(err))
 	}
 
 	switch req.Op {
