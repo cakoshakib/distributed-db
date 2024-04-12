@@ -81,7 +81,7 @@ func handleRequest(ctx context.Context, req dbrequest.DBRequest, store *storage.
 	err := store.HandleRequest(req)
 	// TODO: should check what type of error
 	if err != nil {
-		logger.Warn("server.handleRequest(): error handling request", zap.String("op", string(req.Op)))
+		logger.Warn("server.handleRequest(): error handling request", zap.String("op", string(req.Op)), zap.Error(err))
 		return "401 REQUEST FAILED"
 	}
 	return "200 OK"

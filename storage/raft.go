@@ -137,9 +137,20 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 
 func (s *Store) HandleRequest(req dbrequest.DBRequest) error {
 	// only leader can take write requests
+	s.logger.Info("Handling request", zap.String("op", string(req.Op)), zap.Bool("isWrite", req.IsWrite))
 	if req.IsWrite && s.raft.State() != raft.Leader {
 		return fmt.Errorf("write op not sent to leader")
 	}
+	// no need to write reads to log
+	if !req.IsWrite {
+		_, err := s.ReadKV(req)
+		if err != nil {
+			s.logger.Warn("raft.HandleRequest(): unable to get KV", zap.String("key", req.Key), zap.Error(err))
+			return err
+		}
+		return nil
+	}
+
 	b, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -177,6 +188,7 @@ func (s *Store) Apply(log *raft.Log) interface{} {
 			s.logger.Warn("raft.Apply(): unable to create KV", zap.String("key", req.Key), zap.String("value", req.Value), zap.Error(err))
 		}
 	case dbrequest.GetKV:
+		s.logger.Warn("raft.Apply(): should not be applying reads", zap.String("key", req.Key))
 		_, err := s.ReadKV(req)
 		if err != nil {
 			s.logger.Warn("raft.Apply(): unable to get KV", zap.String("key", req.Key), zap.Error(err))
