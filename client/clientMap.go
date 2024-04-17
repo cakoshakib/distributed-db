@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-    "sync"
-	"time"
+	"sync"
 )
 
 var userTables = map[string]map[string]map[string]string{}
@@ -11,19 +10,19 @@ var mutex = &sync.RWMutex{}
 var count int = 0
 var misses int = 0
 
-func add_user(user string){
+func add_user(user string) {
 	mutex.Lock()
 	userTables[user] = make(map[string]map[string]string)
 	mutex.Unlock()
 }
 
-func add_table(user string, table string){
+func add_table(user string, table string) {
 	mutex.Lock()
 	if _, ok := userTables[user]; ok {
 		userTables[user][table] = make(map[string]string)
 	}
 	mutex.Unlock()
-}	
+}
 
 func add_kv(user string, table string, key string, value string) {
 	mutex.Lock()
@@ -35,7 +34,7 @@ func add_kv(user string, table string, key string, value string) {
 	mutex.Unlock()
 }
 
-func check_kv(user string, table string, key string)(string, bool){
+func check_kv(user string, table string, key string) (string, bool) {
 	mutex.RLock()
 	defer mutex.RUnlock()
 	if _, ok := userTables[user]; ok {
