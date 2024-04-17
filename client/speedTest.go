@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -25,7 +24,7 @@ func main() {
 		processRequest(request)
 	}
 	checkpoint := time.Now()
-	for i := 0; i < n; i++ {
+	for i := 1; i <= n; i++ {
 		request := fmt.Sprintf("get %s %s test%d;\n", user, table, i)
 		processRequest(request)
 	}
@@ -50,7 +49,7 @@ func processRequest(req string) (string, error) {
 	msg, err := reader.ReadString('\n')
 	if err != nil {
 		fmt.Printf("server.process(): error reading from connection")
-		return "", errors.New("server.process(): error reading from connection")
+		return "", err
 	}
 
 	return msg, nil
