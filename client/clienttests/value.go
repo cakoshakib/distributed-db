@@ -1,16 +1,13 @@
-package main
+package clienttests
 
 import (
-	"bufio"
 	"fmt"
-	"net"
 	"sync"
+	"time"
 )
 
 var userTables = map[string]map[string]map[string]string{}
 var mutex = &sync.RWMutex{}
-var count int = 0
-var misses int = 0
 
 func add_user(user string) {
 	mutex.Lock()
@@ -47,7 +44,7 @@ func check_kv(user string, table string, key string) (string, bool) {
 	return "", false
 }
 
-func main() {
+func ValueTest() {
 	total := 0
 	miss := 0
 	user := "user1"
@@ -55,21 +52,23 @@ func main() {
 
 	add_user(user)
 	add_table(user, table)
-	processRequest(fmt.Sprintf("cu %s;\n", user))
-	processRequest(fmt.Sprintf("ct %s %s;\n", user, table))
+	ProcessRequest(fmt.Sprintf("cu %s;\n", user), leader)
+	ProcessRequest(fmt.Sprintf("ct %s %s;\n", user, table), leader)
 
 	n := 1000
 
 	for i := 1; i <= n; i++ {
 		add_kv(user, table, fmt.Sprintf("test%d", i), fmt.Sprintf("value%d", i))
 		request := fmt.Sprintf("add %s %s test%d value%d;\n", user, table, i, i)
-		processRequest(request)
+		ProcessRequest(request, leader)
 
 		request = fmt.Sprintf("get %s %s test%d;\n", user, table, i)
-		serverVal, _ := processRequest(request)
 		localVal, _ := check_kv(user, table, fmt.Sprintf("test%d", i))
+		time.Sleep(100 * time.Millisecond)
+		serverVal, _ := ProcessRequest(request, follower)
 
 		if serverVal != localVal {
+			fmt.Println(fmt.Sprintf("local: %s, server %s", localVal, serverVal))
 			miss++
 		}
 		total++
@@ -83,23 +82,4 @@ func main() {
 	fmt.Println("Miss Rate: ", missRate)
 	fmt.Println("Hit Rate: ", 1-missRate)
 
-}
-
-func processRequest(req string) (string, error) {
-	conn, err := net.Dial("tcp", "localhost:8080")
-	if err != nil {
-		fmt.Println("Handle Error Later")
-		return "", err
-	}
-
-	conn.Write([]byte((req)))
-	reader := bufio.NewReader(conn)
-
-	msg, err := reader.ReadString('\n')
-	if err != nil {
-		fmt.Printf("server.process(): error reading from connection")
-		return "", err
-	}
-
-	return msg, nil
 }
