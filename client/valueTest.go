@@ -41,7 +41,7 @@ func check_kv(user string, table string, key string) (string, bool) {
 	defer mutex.RUnlock()
 	if _, ok := userTables[user]; ok {
 		if value, ok := userTables[user][table][key]; ok {
-			return value, true
+			return "\"" + value + "\"\n", true
 		}
 	}
 	return "", false
@@ -50,14 +50,9 @@ func check_kv(user string, table string, key string) (string, bool) {
 func main() {
 	total := 0
 	miss := 0
-
-	value, exists := check_kv("nick", "table1", "key1")
-	if exists {
-		fmt.Println(value) // prints: value1
-	}
-
 	user := "user1"
 	table := "table1"
+
 	add_user(user)
 	add_table(user, table)
 	processRequest(fmt.Sprintf("cu %s;\n", user))
@@ -66,14 +61,15 @@ func main() {
 	n := 1000
 
 	for i := 1; i <= n; i++ {
+		add_kv(user, table, fmt.Sprintf("test%d", i), fmt.Sprintf("value%d", i))
 		request := fmt.Sprintf("add %s %s test%d value%d;\n", user, table, i, i)
 		processRequest(request)
 
 		request = fmt.Sprintf("get %s %s test%d;\n", user, table, i)
 		serverVal, _ := processRequest(request)
-		localVal, exists := check_kv(user, table, fmt.Sprintf("test%d", i))
+		localVal, _ := check_kv(user, table, fmt.Sprintf("test%d", i))
 
-		if !exists || serverVal != localVal {
+		if serverVal != localVal {
 			miss++
 		}
 		total++

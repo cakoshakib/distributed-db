@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-
 	user := "user1"
 	table := "table1"
 
