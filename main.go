@@ -61,7 +61,9 @@ func main() {
 	logger, _ := zap.NewDevelopment()
 	ctx = context.WithValue(ctx, log.LoggerKey, logger)
 	defer logger.Sync()
-	logger.Info(fmt.Sprintf("received params %s %s %s %s", tcpPort, nodeID, raftAddr, joinAddr))
+	logger.Info("received params",
+		zap.String("tcpPort", tcpPort), zap.String("nodeID", nodeID), zap.String("raftAddr", raftAddr), zap.String("joinAddr", joinAddr), zap.String("dataDir", dataDir),
+	)
 
 	// init Raft store
 	store := storage.New(logger, dataDir)

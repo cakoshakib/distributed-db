@@ -55,7 +55,7 @@ func process(ctx context.Context, conn net.Conn, store *storage.Store) {
 		req := dbrequest.NewRequest(msg)
 		logger.Info(
 			"server.process(): received request", zap.String("remoteAddr", remoteAddr),
-			zap.String("operation", string(req.Op)), zap.String("user", req.User), zap.String("table", req.Table), zap.String("key", req.Key), zap.String("value", req.Value),
+			zap.String("operation", string(req.Op)), zap.String("user", req.User), zap.String("table", req.Table), zap.String("key", req.Key), zap.String("value", req.Value), zap.Bool("IsWrite", req.IsWrite),
 		)
 
 		res := handleRequest(ctx, req, store)
