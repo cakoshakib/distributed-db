@@ -2,18 +2,16 @@
 
 ## How to Run
 
-To start the first node and initialize the Raft cluster
-```
-go run .
-```
-This will start a node listening on localhost:8080 with a Raft address of localhost:12000 and persistently storing data in the `data/` directory
-
-To run another node
-```
-go run . -tcpPort [port] -id [node id] -raftAddr [addr] -joinAddr [first node addr] -dataDir [data directory]
+To run N nodes in the cluster, run
+```py
+py run-servers.py [N]
 ```
 
-As an example
+Logs for each server are updated in 
 ```
- go run . -tcpPort 8070 -id node1 -raftAddr localhost:12001 -joinAddr localhost:8080 -dataDir data2/
- ```
+./log/server{i}.log
+```
+and data is stored in
+```
+./data/server{i}/
+```

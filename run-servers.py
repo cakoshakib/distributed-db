@@ -1,6 +1,9 @@
 import sys
 import subprocess
 import os
+from multiprocessing.pool import ThreadPool
+from multiprocessing import Lock
+import time
 
 TCP_PORT = 8000
 RAFT_PORT = 12000
@@ -15,12 +18,56 @@ num_servers = int(sys.argv[1])
 print("Building go program")
 subprocess.run(["go", "build"], capture_output=True)
 
-# create log folder if it does not exist
+# create relevant directories
+def create_directory(path):
+    if not os.path.exists(path):
+        print(f"Creating {path} directory")
+        os.mkdir(path)
+
+create_directory("./log")
+create_directory("./data")
+
 if not os.path.exists("./log"):
     print("Creating log directory")
     os.mkdir("./log")
 
+# create adata dir if it does not exist
+if not os.path.exists("./data"):
+    print("Creating data directory")
+    os.mkdir("./data")
+
 # run each server
-for i in range(num_servers):
-    subprocess.run(["./distributed-db"])
+lock = Lock()
+
+def print_server_info(i):
+    print(f"Running server{i}")
+    print(f"    - NAME: node{i}")
+    print(f"    - DATA: ./data/server{i}/") 
+    print(f"    - TCP PORT: {TCP_PORT + i}")
+    print(f"    - RAFT PORT: {RAFT_PORT + i}")
+    print(f"    - LOG: ./log/server{i}.log")
+
+def run(i):
+    lock.acquire()
+    print_server_info(i)
+    create_directory(f"./data/server{i}")
+    cmd = ["./distributed-db", 
+        "-tcpPort", str(TCP_PORT + i), 
+        "-id", f"node{i}",
+        "-raftAddr", f"localhost:{RAFT_PORT + i}",
+        "-dataDir", f"data/server{i}/"
+    ]
+    lock.release()
+    # join if not the first node
+    if i != 0: 
+        cmd += ["-joinAddr", f"localhost:{TCP_PORT}"]
+    with open(f"./log/server{i}.log", "w+") as logf:
+        subprocess.run(cmd, stdout=logf, stderr=logf)
+
+
+with ThreadPool(num_servers) as pool:
+    pool.map_async(run, range(0,1))
+    time.sleep(3)
+    pool.map(run, range(1,num_servers))
+
 
