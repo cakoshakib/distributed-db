@@ -58,8 +58,11 @@ def run(i):
 
 
 with ThreadPool(num_servers) as pool:
-    pool.map_async(run, range(0,1))
-    time.sleep(3)
-    pool.map(run, range(1,num_servers))
+    if num_servers == 1:
+        pool.map(run, range(num_servers))
+    else:
+        pool.map_async(run, range(0,1))
+        time.sleep(3)
+        pool.map(run, range(1,num_servers))
 
 
