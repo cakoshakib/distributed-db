@@ -77,7 +77,7 @@ func main() {
 	// init Raft store
 	store := storage.New(logger, dataDir)
 	store.RaftBind = raftAddr
-	if err := store.Open(joinAddr == "", nodeID); err != nil {
+	if err := store.Open(joinAddr == "", nodeID, db); err != nil {
 		logger.Error("raft: failed to open store", zap.Error(err))
 	}
 
