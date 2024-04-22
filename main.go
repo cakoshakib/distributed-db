@@ -68,7 +68,7 @@ func main() {
 	)
 
 	// init BoltDB
-	db, err := bolt.Open(path.Join(dataDir, nodeID, ".db"), 0600, nil)
+	db, err := bolt.Open(path.Join(dataDir, nodeID + ".db"), 0600, nil)
 	if err != nil {
 		logger.Fatal("boltdb could not be opened", zap.Error(err))
 	}
