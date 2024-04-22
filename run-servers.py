@@ -54,15 +54,15 @@ def run(i):
     if i != 0: 
         cmd += ["-joinAddr", f"localhost:{TCP_PORT}"]
     with open(f"./logs/server{i}.log", "w+") as logf:
-        subprocess.run(cmd, stdout=logf, stderr=logf)
+        ret = subprocess.Popen(cmd, stdout=logf, stderr=logf)
+    return ret
 
 
-with ThreadPool(num_servers) as pool:
-    if num_servers == 1:
-        pool.map(run, range(num_servers))
-    else:
-        pool.map_async(run, range(0,1))
-        time.sleep(3)
-        pool.map(run, range(1,num_servers))
+procs = []
+for i in range(num_servers):
+    procs.append(run(i))
+    time.sleep(2)
 
+for proc in procs:
+    proc.wait()
 
