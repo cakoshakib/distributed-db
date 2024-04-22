@@ -11,6 +11,7 @@ import (
 
 	"github.com/cakoshakib/distributed-db/commons/dbrequest"
 	"github.com/hashicorp/raft"
+	bolt "go.etcd.io/bbolt"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +32,7 @@ func New(logger *zap.Logger, dataDir string) *Store {
 	}
 }
 
-func (s *Store) Open(firstNode bool, nodeID string) error {
+func (s *Store) Open(firstNode bool, nodeID string, boltdb *bolt.DB) error {
 	// open raft store for this node
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(nodeID)
@@ -47,6 +48,7 @@ func (s *Store) Open(firstNode bool, nodeID string) error {
 	}
 
 	// probably want to persist these stores
+	
 	snapshots := raft.NewInmemSnapshotStore()
 	logStore := raft.NewInmemStore()
 	stableStore := raft.NewInmemStore()
@@ -156,6 +158,7 @@ func (s *Store) HandleRequest(req dbrequest.DBRequest) (string, error) {
 		return "", err
 	}
 	f := s.raft.Apply(b, raftTimeout)
+	// TODO: Measure total latency of log replication per node only when logs do not come from Restore()
 	return "", f.Error()
 }
 
