@@ -24,7 +24,7 @@ def create_directory(path):
         print(f"Creating {path} directory")
         os.mkdir(path)
 
-create_directory("./log")
+create_directory("./logs")
 create_directory("./data")
 create_directory("./boltdbstore")
 
@@ -37,7 +37,7 @@ def print_server_info(i):
     print(f"    - DATA: ./data/server{i}/") 
     print(f"    - TCP PORT: {TCP_PORT + i}")
     print(f"    - RAFT PORT: {RAFT_PORT + i}")
-    print(f"    - LOG: ./log/server{i}.log")
+    print(f"    - LOG: ./logs/server{i}.log")
 
 def run(i):
     lock.acquire()
@@ -53,7 +53,7 @@ def run(i):
     # join if not the first node
     if i != 0: 
         cmd += ["-joinAddr", f"localhost:{TCP_PORT}"]
-    with open(f"./log/server{i}.log", "w+") as logf:
+    with open(f"./logs/server{i}.log", "w+") as logf:
         subprocess.run(cmd, stdout=logf, stderr=logf)
 
 
