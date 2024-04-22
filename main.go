@@ -7,12 +7,14 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path"
 
 	"go.uber.org/zap"
 	//"github.com/cakoshakib/distributed-db/storage"
 	log "github.com/cakoshakib/distributed-db/commons"
 	"github.com/cakoshakib/distributed-db/network"
 	"github.com/cakoshakib/distributed-db/storage"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (
@@ -64,6 +66,13 @@ func main() {
 	logger.Info("received params",
 		zap.String("tcpPort", tcpPort), zap.String("nodeID", nodeID), zap.String("raftAddr", raftAddr), zap.String("joinAddr", joinAddr), zap.String("dataDir", dataDir),
 	)
+
+	// init BoltDB
+	db, err := bolt.Open(path.Join(dataDir, nodeID, ".db"), 0600, nil)
+	if err != nil {
+		logger.Fatal("boltdb could not be opened", zap.Error(err))
+	}
+	defer db.Close()
 
 	// init Raft store
 	store := storage.New(logger, dataDir)

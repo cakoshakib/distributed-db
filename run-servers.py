@@ -26,15 +26,7 @@ def create_directory(path):
 
 create_directory("./log")
 create_directory("./data")
-
-if not os.path.exists("./log"):
-    print("Creating log directory")
-    os.mkdir("./log")
-
-# create adata dir if it does not exist
-if not os.path.exists("./data"):
-    print("Creating data directory")
-    os.mkdir("./data")
+create_directory("./boltdbstore")
 
 # run each server
 lock = Lock()
