@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package boltstore;
+
+option go_package = "github.com/cakoshakib/distributed-db/storage/logstore";
+
+import "google/protobuf/timestamp.proto";
+
+// Reference raft.Log for LogType enum
+enum LogType {
+    LogCommand = 0;
+    LogNoop = 1;
+    LogAddPeerDeprecated = 2;
+    LogRemovePeerDeprecated = 3;
+    LogBarrier = 4;
+    LogConfiguration = 5;
+}
+
+// Log corresponds to the raft.Log struct
+message Log {
+    uint64 index = 1;
+    uint64 term = 2;
+    LogType type = 3;
+    bytes data = 4;
+    bytes extensions = 5;
+    google.protobuf.Timestamp appended_at = 6;
+}

@@ -14,7 +14,7 @@ import (
 	log "github.com/cakoshakib/distributed-db/commons"
 	"github.com/cakoshakib/distributed-db/network"
 	"github.com/cakoshakib/distributed-db/storage"
-	bolt "go.etcd.io/bbolt"
+	bdbclient "github.com/cakoshakib/distributed-db/storage/boltdbclient"
 )
 
 const (
@@ -38,22 +38,6 @@ func init() {
 	flag.StringVar(&dataDir, "dataDir", "data/", "Directory to store data")
 }
 
-func joinCluster(logger *zap.Logger) error {
-	// dial the join address
-	conn, err := net.Dial("tcp", joinAddr)
-	if err != nil {
-		logger.Error("joinCluster(): could not dial join address", zap.String("joinAddr", joinAddr))
-		return err
-	}
-	defer conn.Close()
-	payload := []byte(fmt.Sprintf("join %s %s;", nodeID, raftAddr))
-	if _, err := conn.Write(payload); err != nil {
-		logger.Error("joinCluster(): error sending join request", zap.String("joinAddr", joinAddr), zap.Error(err))
-		return err
-	}
-	return nil
-}
-
 func main() {
 	flag.Parse()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -68,9 +52,9 @@ func main() {
 	)
 
 	// init BoltDB
-	db, err := bolt.Open(path.Join(dataDir, nodeID + ".db"), 0600, nil)
+	db, err := bdbclient.NewBoltDB(path.Join(dataDir, nodeID+".db"))
 	if err != nil {
-		logger.Fatal("boltdb could not be opened", zap.Error(err))
+		logger.Fatal("boltdb errors", zap.Error(err))
 	}
 	defer db.Close()
 
@@ -96,4 +80,20 @@ func main() {
 	}
 
 	server.Start(ctx)
+}
+
+func joinCluster(logger *zap.Logger) error {
+	// dial the join address
+	conn, err := net.Dial("tcp", joinAddr)
+	if err != nil {
+		logger.Error("joinCluster(): could not dial join address", zap.String("joinAddr", joinAddr))
+		return err
+	}
+	defer conn.Close()
+	payload := []byte(fmt.Sprintf("join %s %s;", nodeID, raftAddr))
+	if _, err := conn.Write(payload); err != nil {
+		logger.Error("joinCluster(): error sending join request", zap.String("joinAddr", joinAddr), zap.Error(err))
+		return err
+	}
+	return nil
 }
