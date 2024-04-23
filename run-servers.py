@@ -106,9 +106,9 @@ def kill(i):
 
 def add():
     print()
-    print(f"Adding node {i}")
     global max_n
     max_n += 1
+    print(f"Adding node {max_n}")
     procs.append((max_n, run(max_n)))
 
 def quit():
