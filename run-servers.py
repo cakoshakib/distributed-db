@@ -43,6 +43,7 @@ def print_server_info(i):
     print()
 
 def run(i):
+    global procs
     lock.acquire()
     print_server_info(i)
     create_directory(f"./data/server{i}")
@@ -54,8 +55,8 @@ def run(i):
     ]
     lock.release()
     # join if not the first node
-    if i != 0: 
-        cmd += ["-joinAddr", f"localhost:{LEADER_PORT}"]
+    if len(procs) != 0: 
+        cmd += ["-joinAddr", f"localhost:{LEADER_PORT + procs[0][0]}"]
     with open(f"./logs/server{i}.log", "w+") as logf:
         ret = subprocess.Popen(cmd, stdout=logf, stderr=logf)
     return ret
@@ -79,6 +80,7 @@ def help():
     print("  - list : lists all nodes running")
     print("  - kill [i] : kills node i from the cluster")
     print("  - add : adds node to cluster and prints info")
+    print("  - quit : kill entire cluster")
     print()
 
 def list():
@@ -109,6 +111,10 @@ def add():
     max_n += 1
     procs.append((max_n, run(max_n)))
 
+def quit():
+    for i, proc in procs:
+        proc.kill()
+
 while True:
     print(">", end="", flush=True)
     command = input().lower()
@@ -124,7 +130,6 @@ while True:
             kill(int(parts[1]))
     elif command == "add":
         add()
-
-for proc in procs:
-    proc.wait()
-
+    elif command == "quit":
+        quit()
+        break
