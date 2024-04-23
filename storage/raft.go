@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cakoshakib/distributed-db/commons/dbrequest"
+	"github.com/cakoshakib/distributed-db/storage/boltstore"
 	"github.com/hashicorp/raft"
 	bolt "go.etcd.io/bbolt"
 	"go.uber.org/zap"
@@ -32,7 +33,7 @@ func New(logger *zap.Logger, dataDir string) *Store {
 	}
 }
 
-func (s *Store) Open(firstNode bool, nodeID string, boltdb *bolt.DB) error {
+func (s *Store) Open(firstNode bool, nodeID string, db *bolt.DB) error {
 	// open raft store for this node
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(nodeID)
@@ -48,10 +49,12 @@ func (s *Store) Open(firstNode bool, nodeID string, boltdb *bolt.DB) error {
 	}
 
 	// probably want to persist these stores
-	
+
 	snapshots := raft.NewInmemSnapshotStore()
-	logStore := raft.NewInmemStore()
-	stableStore := raft.NewInmemStore()
+	logStore := boltstore.NewBoltStore(db, s.logger)
+	stableStore := boltstore.NewBoltStore(db, s.logger)
+	//logStore := raft.NewInmemStore()
+	//stableStore := raft.NewInmemStore()
 
 	ra, err := raft.NewRaft(config, s, logStore, stableStore, snapshots, transport)
 	if err != nil {
@@ -69,7 +72,8 @@ func (s *Store) Open(firstNode bool, nodeID string, boltdb *bolt.DB) error {
 			},
 		}
 		s.logger.Info("raft.Open(): bootstrapping cluster", zap.String("id", string(config.LocalID)), zap.String("address", string(transport.LocalAddr())), zap.Any("config", configuration))
-		s.raft.BootstrapCluster(configuration)
+		res := s.raft.BootstrapCluster(configuration)
+		s.logger.Info("BootstrapCluster return", zap.Error(res.Error()))
 	}
 
 	return nil
