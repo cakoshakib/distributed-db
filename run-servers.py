@@ -127,7 +127,10 @@ while True:
         if len(parts) < 2:
             print("Provide index to kill")
         else:
-            kill(int(parts[1]))
+            try:
+                kill(int(parts[1]))
+            except ValueError:
+                print("Invalid kill entry, enter only an index number")
     elif command == "add":
         add()
     elif command == "quit":
