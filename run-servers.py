@@ -6,6 +6,7 @@ from multiprocessing import Lock
 import time
 
 TCP_PORT = 8000
+LEADER_PORT = TCP_PORT
 RAFT_PORT = 12000
 
 # read number of servers
@@ -32,12 +33,14 @@ create_directory("./boltdbstore")
 lock = Lock()
 
 def print_server_info(i):
+    print()
     print(f"Running server{i}")
     print(f"    - NAME: node{i}")
     print(f"    - DATA: ./data/server{i}/") 
     print(f"    - TCP PORT: {TCP_PORT + i}")
     print(f"    - RAFT PORT: {RAFT_PORT + i}")
-    print(f"    - LOG: ./logs/server{i}.log")
+    print(f"    - LOG: ./logs/server{i}.log", flush=True)
+    print()
 
 def run(i):
     lock.acquire()
@@ -52,16 +55,75 @@ def run(i):
     lock.release()
     # join if not the first node
     if i != 0: 
-        cmd += ["-joinAddr", f"localhost:{TCP_PORT}"]
+        cmd += ["-joinAddr", f"localhost:{LEADER_PORT}"]
     with open(f"./logs/server{i}.log", "w+") as logf:
         ret = subprocess.Popen(cmd, stdout=logf, stderr=logf)
     return ret
 
 
 procs = []
+max_n = num_servers - 1
 for i in range(num_servers):
-    procs.append(run(i))
+    procs.append((i, run(i)))
     time.sleep(2)
+
+"""
+help
+list
+kill i
+add
+"""
+def help():
+    print()
+    print("Available commands:")
+    print("  - list : lists all nodes running")
+    print("  - kill [i] : kills node i from the cluster")
+    print("  - add : adds node to cluster and prints info")
+    print()
+
+def list():
+    print()
+    print("List of running nodes:")
+    for i, _ in procs:
+        print(f"  - node{i}")
+    print()
+
+def kill(i):
+    print()
+    print(f"Attempting to kill node {i}...")
+    killed = False
+    for idx, proc in procs:
+        if idx == i:
+            proc.kill()
+            print(f"Killed node {i}")
+            killed = True
+            procs.pop(idx)
+    if not killed:
+        print(f"Node {i} does not exist")
+    print()
+
+def add():
+    print()
+    print(f"Adding node {i}")
+    global max_n
+    max_n += 1
+    procs.append((max_n, run(max_n)))
+
+while True:
+    print(">", end="", flush=True)
+    command = input().lower()
+    if command == "help":
+        help()
+    elif command == "list":
+        list()
+    elif command.startswith("kill"):
+        parts = command.split()
+        if len(parts) < 2:
+            print("Provide index to kill")
+        else:
+            kill(int(parts[1]))
+    elif command == "add":
+        add()
 
 for proc in procs:
     proc.wait()
