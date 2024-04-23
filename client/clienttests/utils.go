@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	leader   = "8080"
-	follower = "8070"
+	leader   = "8000"
+	follower = "8001"
 )
 
 func ProcessRequest(req string, port string) (string, error) {

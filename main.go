@@ -11,6 +11,7 @@ import (
 
 	"go.uber.org/zap"
 	//"github.com/cakoshakib/distributed-db/storage"
+
 	log "github.com/cakoshakib/distributed-db/commons"
 	"github.com/cakoshakib/distributed-db/network"
 	"github.com/cakoshakib/distributed-db/storage"
@@ -23,11 +24,13 @@ const (
 )
 
 var (
-	tcpPort  string
-	nodeID   string
-	raftAddr string
-	joinAddr string
-	dataDir  string
+	tcpPort    string
+	nodeID     string
+	raftAddr   string
+	joinAddr   string
+	dataDir    string
+	metricsDir string
+	doMetrics  bool = true
 )
 
 func init() {
@@ -36,6 +39,13 @@ func init() {
 	flag.StringVar(&nodeID, "id", raftAddr, "Raft Node ID (raftAddr by default)")
 	flag.StringVar(&joinAddr, "joinAddr", "", "Client-facing address to join Raft cluster")
 	flag.StringVar(&dataDir, "dataDir", "data/", "Directory to store data")
+	flag.StringVar(&metricsDir, "metricsDir", "metrics/", "Directory to store metrics")
+
+	doMetricsString := ""
+	flag.StringVar(&doMetricsString, "doMetrics", "false", "Boolean to track metrics")
+	if doMetricsString == "t" || doMetricsString == "true" {
+		doMetrics = true
+	}
 }
 
 func main() {
@@ -48,7 +58,9 @@ func main() {
 	ctx = context.WithValue(ctx, log.LoggerKey, logger)
 	defer logger.Sync()
 	logger.Info("received params",
-		zap.String("tcpPort", tcpPort), zap.String("nodeID", nodeID), zap.String("raftAddr", raftAddr), zap.String("joinAddr", joinAddr), zap.String("dataDir", dataDir),
+		zap.String("tcpPort", tcpPort), zap.String("nodeID", nodeID), zap.String("raftAddr", raftAddr),
+		zap.String("joinAddr", joinAddr), zap.String("dataDir", dataDir), zap.String("metricsDir", metricsDir),
+		zap.Bool("doMetrics", doMetrics),
 	)
 
 	// init BoltDB
@@ -66,7 +78,8 @@ func main() {
 	}
 
 	// init client-facing server
-	server, err := network.NewServer(ctx, tcpPort, store)
+	// note: metrics are being initialized in the server
+	server, err := network.NewServer(ctx, tcpPort, store, path.Join(metricsDir, nodeID+".csv"), doMetrics)
 	if err != nil {
 		logger.Error("server: failed initialization with error", zap.Error(err))
 		return
