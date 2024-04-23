@@ -116,7 +116,7 @@ def add():
     procs[node_id] = run(max_n)
 
 def quit():
-    for _, proc in procs:
+    for _, proc in procs.items():
         proc.kill()
 
 while True:
