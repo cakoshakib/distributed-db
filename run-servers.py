@@ -56,16 +56,19 @@ def run(i):
     lock.release()
     # join if not the first node
     if len(procs) != 0: 
-        cmd += ["-joinAddr", f"localhost:{LEADER_PORT + procs[0][0]}"]
+        # TODO: Find a joinAddr workaround
+        # Theres no good way to find the LEADER_PORT, as Raft randomly assigns a leader.
+        cmd += ["-joinAddr", f"localhost:{LEADER_PORT}"]
     with open(f"./logs/server{i}.log", "w+") as logf:
         ret = subprocess.Popen(cmd, stdout=logf, stderr=logf)
     return ret
 
 
-procs = []
+procs = {}
 max_n = num_servers - 1
 for i in range(num_servers):
-    procs.append((i, run(i)))
+    node_id = f"node{i}"
+    procs[node_id] = run(i)
     time.sleep(2)
 
 """
@@ -86,20 +89,20 @@ def help():
 def list():
     print()
     print("List of running nodes:")
-    for i, _ in procs:
-        print(f"  - node{i}")
+    for key in procs:
+        print(f"  - {key}")
     print()
 
 def kill(i):
     print()
     print(f"Attempting to kill node {i}...")
     killed = False
-    for idx, proc in procs:
-        if idx == i:
-            proc.kill()
-            print(f"Killed node {i}")
-            killed = True
-            procs.pop(idx)
+    if i in procs:
+        proc = procs[i]
+        proc.kill()
+        print(f"Killed node {i}")
+        killed = True
+        del procs[i]
     if not killed:
         print(f"Node {i} does not exist")
     print()
@@ -108,11 +111,12 @@ def add():
     print()
     global max_n
     max_n += 1
+    node_id = f"node{max_n}"
     print(f"Adding node {max_n}")
-    procs.append((max_n, run(max_n)))
+    procs[node_id] = run(max_n)
 
 def quit():
-    for i, proc in procs:
+    for _, proc in procs:
         proc.kill()
 
 while True:
@@ -127,10 +131,8 @@ while True:
         if len(parts) < 2:
             print("Provide index to kill")
         else:
-            try:
-                kill(int(parts[1]))
-            except ValueError:
-                print("Invalid kill entry, enter only an index number")
+            kill(parts[1])
+
     elif command == "add":
         add()
     elif command == "quit":
